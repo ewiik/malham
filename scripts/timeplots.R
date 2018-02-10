@@ -6,6 +6,12 @@ if (!file.exists("../data/malham.rds")) {
 }
 maldf <- readRDS("../data/malham.rds")
 
+if (!file.exists("../data/dat-mod/allPhosphorus.rds")) {
+  source("getsondedata.R")
+}
+alltp <- readRDS("../data/dat-mod/allPhosphorus.rds")
+allsonde <- readRDS("../data/dat-mod/allSondes.rds")
+
 ## load packages
 library("ggplot2")
 library("viridis")
@@ -16,6 +22,8 @@ library("extrafont")
 papertheme <- theme_bw(base_size=12, base_family = 'Arial') +
   theme(legend.position='top')
 
+## ===================================================================================================
+## Auto-downloaded data: 
 ## subset to interest vars and/or those with satisfactory data availability
 datamuch <- ddply(maldf, "var", summarise, length=length(value))
 datamuch <- datamuch[datamuch$length > 30,]
@@ -82,3 +90,19 @@ ggplot(malsub, aes(y=Northing, x=Easting)) +
   geom_point() +
   geom_text(data=loca, aes(label=Site))
 ## FIXME: these don't seem to make sense..
+
+## ===================================================================================================
+## Liam's data etc. including TP
+TPplot <- ggplot(alltp[!is.na(alltp$DateTime),], aes(x=factor(format(DateTime, format = '%y-%m-%d')), 
+                                                     y=P, col=Measure)) +
+  papertheme +
+  geom_point(aes(pch=Site)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_hline(yintercept = 12)
+
+chlplot <- ggplot(allsonde, aes(y=value, x=DateTime, col=Sonde)) +
+  papertheme +
+  geom_point(size=0.5, alpha=0.5) +
+  facet_wrap(~variable, scales='free_y') +
+  guides(size=guide_legend(override.aes = list(size=1)), colour=guide_legend(override.aes = list(alpha=1)))
+
