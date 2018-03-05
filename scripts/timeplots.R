@@ -17,6 +17,7 @@ library("ggplot2")
 library("viridis")
 library("gridExtra")
 library("extrafont")
+library('plyr')
 
 ## create a theme to save linespace in plots
 papertheme <- theme_bw(base_size=12, base_family = 'Arial') +
@@ -81,6 +82,10 @@ timeplot <- ggplot(malsub[malsub$var %in% varwant,], aes(y=value, x=DateTime, co
   theme(strip.background = element_rect(fill="white", colour = "white")) +
   guides(col=guide_legend(nrow=2, override.aes = list(alpha=1, size=2))) 
   
+ggplot(malsub[malsub$var %in% varwant,], aes(y=value, x=DateTime, col=Site)) +
+  papertheme +
+  geom_point(size=0.5, alpha=0.5) +
+  facet_wrap(~var, scales = "free_y")
 
 ggsave("../figs/malsites-time.pdf", timeplot, width = 18, height = 9)
 
@@ -98,11 +103,15 @@ TPplot <- ggplot(alltp[!is.na(alltp$DateTime),], aes(x=factor(format(DateTime, f
   papertheme +
   geom_point(aes(pch=Site)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  geom_hline(yintercept = 12)
+  geom_hline(yintercept = 12) +
+  ylab("P, ug/L") + xlab("Time")
 
 chlplot <- ggplot(allsonde, aes(y=value, x=DateTime, col=Sonde)) +
   papertheme +
-  geom_point(size=0.5, alpha=0.5) +
+  geom_point(size=0.5, alpha=0.3) +
   facet_wrap(~variable, scales='free_y') +
-  guides(size=guide_legend(override.aes = list(size=1)), colour=guide_legend(override.aes = list(alpha=1)))
+  guides(size=guide_legend(override.aes = list(size=3)), colour=guide_legend(override.aes = list(alpha=1, size=3)))+
+  theme(axis.text.x = element_text(angle=45, hjust=1))
 
+ggsave(plot=chlplot,filename= "../figs/time-sondes.png", width=15, height=10)
+ggsave(plot=TPplot, filename="../figs/time-tp.png")

@@ -1,7 +1,3 @@
-mal <- read.csv("~/static/PhDPapers/Data/Water Chemistry My Lakes/FromLiamOReilly/sondes201516.csv", skip=1)
-mal$datetime <- paste(mal$DATE, mal$TIME)
-mal$datetime <- as.POSIXct(mal$datetime, format="%d/%m/%Y %H:%M:%S", tz="GMT")
-
 ## create protocol for downloading data from the yorkshire region
 ## ================================================================================
 ## data availability starts at 2000
