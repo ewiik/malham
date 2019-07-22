@@ -32,10 +32,10 @@ malemma <- read.csv("../data/emmatp.csv", sep = "\t", row.names = 1)
 malemma <- as.data.frame.matrix(t(malemma))
 malemma$Month <- sprintf("%02d", match(substr(rownames(malemma), 1,3), tolower(month.abb)))
 malemma$Year <- 2000 + as.numeric(substr(rownames(malemma),4,5))
-malemma$datetime <- paste0(malemma$Month, malemma$Year)
-malemma$datetime <- as.POSIXct(paste0(malemma$datetime,"01"), format="%m%Y%d") ## FIXME; need days of
+malemma$DateTime <- paste0(malemma$Month, malemma$Year)
+malemma$DateTime <- as.POSIXct(paste0(malemma$datetime,"01"), format="%m%Y%d") ## FIXME; need days of
 ##    my samplings... not tidy in thesis meta..=(
-malemma <- data.frame(Site="MALHAM TARN", melt(malemma, id.vars = "datetime", measure.vars = "Mal"))
+malemma <- data.frame(Site="Malham Tarn", melt(malemma, id.vars = "DateTime", measure.vars = "Mal"))
 malemma$lessthan <- FALSE
 malemma$Measure <- "TP"
 
@@ -183,6 +183,17 @@ pHplot <- ggplot(malsub[-which(is.na(malsub$datetime)),], aes(y=pH, x=datetime))
   xlab("")
 ggsave(plot=pHplot, file="../figs/pHdata.pdf", width=8, height=8)  
 
+inflowdat <- subset(malsub, Site=="TARN BECK AT ENTRANCE TO MALHAM TARN")
+ggplot(inflowdat[-which(is.na(inflowdat$datetime)),], aes(y=pH, x=datetime)) +
+  papertheme +
+  geom_point() +
+  #scale_color_manual(values=c("#386cb0", "#f0027f", "#bf5b17")) +
+  #facet_wrap(~format(datetime, "%m")) +
+  theme(legend.direction = 'vertical', axis.text.x = element_text(angle=90)) +
+  scale_x_datetime(date_labels = "%y", date_breaks = "1 years") +
+  xlab("Year")
+
+
 ggplot(malsub[-which(is.na(malsub$datetime)),], aes(y=Alk4.5, x=datetime)) +
   papertheme +
   geom_point(aes(col=Site),alpha=0.6) +
@@ -193,3 +204,9 @@ ggplot(malsub[-which(is.na(malsub$datetime)),], aes(y=pH, x=datetime)) +
   papertheme +
   geom_point(aes(size=Alk4.5),alpha=0.6)  +
   facet_wrap(~Site, ncol=1)
+
+## save some processed data
+saveRDS(malP, "../data/dat-mod/malP-decadal.rds")
+saveRDS(malN, "../data/dat-mod/malN-decadal.rds")
+
+saveRDS(malemma, "../data/dat-mod/malTP-wiik.rds")

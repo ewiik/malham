@@ -92,8 +92,8 @@ ggsave("../figs/malsites-time.pdf", timeplot, width = 18, height = 9)
 ## where are the locations
 loca <- as.data.frame(unique(malsub[,c('Site', 'Easting', 'Northing')]))
 ggplot(malsub, aes(y=Northing, x=Easting)) +
-  geom_point() +
-  geom_text(data=loca, aes(label=Site))
+  geom_point(aes(col=Site)) #+
+ # geom_text(data=loca, aes(label=Site))
 ## FIXME: these don't seem to make sense..
 
 ## ===================================================================================================
@@ -112,6 +112,40 @@ chlplot <- ggplot(allsonde, aes(y=value, x=DateTime, col=Sonde)) +
   facet_wrap(~variable, scales='free_y') +
   guides(size=guide_legend(override.aes = list(size=3)), colour=guide_legend(override.aes = list(alpha=1, size=3)))+
   theme(axis.text.x = element_text(angle=45, hjust=1))
+
+phdat <- allsonde[allsonde$variable=="pH",]
+phdat$Site <- "Inflow"
+phdat$Site[phdat$Sonde=="Outflow"] <- "Outflow"
+ggplot(phdat, aes(y=value, x=DateTime, col=Site)) +
+  papertheme +
+  geom_point(size=0.5, alpha=0.3) 
+  #facet_wrap(~Site,ncol=1) #+
+  #guides(size=guide_legend(override.aes = list(size=3)), colour=guide_legend(override.aes = list(alpha=1, size=3)))+
+  #theme(axis.text.x = element_text(angle=45, hjust=1))
+
+ggplot(malsub[malsub$Site=="RIVER AIRE AT MALHAM TARN" & !is.na(malsub$datetime),], aes(y=pH, x=datetime, col=Site)) +
+  papertheme +
+  geom_point(size=0.8, alpha=0.8, aes(col=format(datetime,"%m"))) +
+  facet_wrap(~format(datetime,"%m"))
+
+chldat <- allsonde[allsonde$variable=="Chl",]
+ggplot(chldat, aes(y=value, x=DateTime)) +
+  facet_wrap(~format(chldat$DateTime, "%H")) +
+  geom_point()
+ggplot(chldat, aes(y=value, x=DateTime)) +
+  geom_point()+
+  ylim(c(0,100))
+
+oxdat <- allsonde[allsonde$variable=="DOrel",]
+ggplot(oxdat, aes(y=value, x=DateTime)) +
+  facet_wrap(~format(oxdat$DateTime, "%H")) +
+  geom_point()
+oxsum <- ddply(oxdat,.(Month, Sonde, Year), summarise, meanOx=mean(value, na.rm = TRUE))
+ggplot(oxsum, aes(y=meanOx, x=Month, col=Sonde)) +
+  geom_point() +
+  papertheme +
+  ylab("Mean monthly % oxygen")#+
+  #facet_wrap(~Sonde, ncol=1)
 
 ggsave(plot=chlplot,filename= "../figs/time-sondes.png", width=15, height=10)
 ggsave(plot=TPplot, filename="../figs/time-tp.png")

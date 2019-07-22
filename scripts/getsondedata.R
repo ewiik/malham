@@ -5,6 +5,7 @@
 ## read in data set
 ## FIXME: get units for everything
 ## FIXME: get side inflow data clean too!
+## note lots data based on email from Liam 20.07.2016
 
 mal1 <- read.csv("../data/MalSonde2014-2015.csv", stringsAsFactors = FALSE)
 mal2 <- read.csv("../data/MalSonde2015-2016.csv", stringsAsFactors = FALSE)
@@ -134,6 +135,15 @@ tp2 <- tp2[complete.cases(tp2$DateTime),]
 # some end up NA but these had no time available so whatever.
 tp2$ugP <- po4top(tp2$PO4mgL)
 
+tp2tidy <- tp2
+tp2tidy$Site[grep("Out", tp2tidy$Site)] <- "Outflow"
+tp2tidy$Site[grep("In", tp2tidy$Site)] <- "Inflow"
+tp2tidy$Site[grep("ridge", tp2tidy$Site)] <- "Inflow"
+tp2tidy$Site[grep("inlet", tp2tidy$Site)] <- "Inflow"
+tp2tidy <- tp2tidy[-which(tp2tidy$Site==" "),]
+
+## note this is "autosampler" (notts not nott trent) plus the random NE file not within a zip file
+## latter no site mentioned; both have flow data thoughso likely inflow.. FIXME
 tp3$Date <- as.POSIXct(tp3$Date, tz="Europe/London", format="%d/%m/%Y")
 
 tp4$DateTime <- gsub("MAR","03", tp4$DateTime)
@@ -142,10 +152,11 @@ tp4$DateTime <-as.POSIXct(tp4$DateTime, tz="Europe/London", format="%d-%m-%y %H:
 tp4$TPugL <- as.numeric(gsub("<","",tp4$TpmgL))*1000
 
 ## FIXME: can we find time of day for tp3 and also where was tp taken from?
-alltp <- data.frame(DateTime=tp1$DateTime, P=tp1$ugP, Site="Tarn",Measure="Phosphate")
-alltp <- rbind(alltp, data.frame(DateTime=tp2$DateTime, P=tp2$ugP, Site="Streams",Measure="Phosphate"))
-alltp <- rbind(alltp, data.frame(DateTime=tp3$Date, P=tp3$TpugL, Site="Inflow?", Measure="TP"))
-alltp <- rbind(alltp, data.frame(DateTime=tp4$DateTime, P=tp4$TPugL, Site="Inflow?", Measure="TP-DT20"))
+alltp <- data.frame(DateTime=tp1$DateTime, P=tp1$ugP, Site="Malham Tarn",Measure="Phosphate-P")
+alltp <- rbind(alltp, data.frame(DateTime=tp2tidy$DateTime, P=tp2tidy$ugP, Site=tp2tidy$Site,
+                                 Measure="Phosphate-P"))
+alltp <- rbind(alltp, data.frame(DateTime=tp3$Date, P=tp3$TpugL, Site="Inflow", Measure="TP"))
+alltp <- rbind(alltp, data.frame(DateTime=tp4$DateTime, P=tp4$TPugL, Site="Inflow", Measure="TP-DT20"))
 
 ## ==========================================================================================================
 ## save relevant data frames

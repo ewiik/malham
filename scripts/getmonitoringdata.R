@@ -1,6 +1,6 @@
 ## create protocol for downloading data from the yorkshire region
 ## ================================================================================
-## data availability starts at 2000
+## data availability starts at 2000, this is the generic access url:
 years <- 2000:2018
 namelist <- list(paste0("http://environment.data.gov.uk/water-quality/batch/measurement?area=3-34&isComplianceSample=false&year=", 
                         years))
