@@ -1,0 +1,283 @@
+date,transect,location,bng,section,depth,substrate,biomass,filalg,species,abundance,notes
+15.06.2009,1,shore,,1a,25,Co,1,1,casp,1,
+15.06.2009,1,shore,,1b,50,Sa,1,0,casp,1,
+15.06.2009,1,shore,,1c,75,Sa,0,0,,,
+15.06.2009,1,shore,,1d,>75,Co,0,0,,,
+15.06.2009,1,shore,,2a,25,Co,1,0,casp,1,
+15.06.2009,1,shore,,2b,50 ,Sa,3,1,casp,3,
+15.06.2009,1,shore,,2c,75,Sa,2,1,casp,2,
+15.06.2009,1,shore,,2d,>75,Sa,1,0,casp,1,
+15.06.2009,1,shore,,3a,25,Co,0,0,,,
+15.06.2009,1,shore,,3b,50,Sa,2,2,casp,2,
+15.06.2009,1,shore,,3c,75,Sa,1,1,casp,1,
+15.06.2009,1,shore,,3d,>75cm,Sa,1,0,casp,1,
+15.06.2009,1,shore,,4a,25,Sa,1,0,fanti,1,
+15.06.2009,1,shore,,4b,50,Sa,2,1,casp,2,
+15.06.2009,1,shore,,4c,75,Sa,2,1,casp,2,
+15.06.2009,1,shore,,4d,>75,Sa,0,0,casp,,
+15.06.2009,1,shore,,5a,25,Sa,0,0,,,
+15.06.2009,1,shore,,5b,50,Sa,2,1,casp,2,
+15.06.2009,1,shore,,5c,75,Sa,2,1,casp,2,
+15.06.2009,1,shore,,5d,>75,Sa,0,0,,,
+15.06.2009,1,boat,,270,310,Si,0,0,,,
+15.06.2009,1,boat,,270,310,Si,1,0,characeae,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,290,Si,3,0,characeae,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,270,Si,1,0,characeae,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,250,Si,3,0,characeae,3,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,260,Si,3,0,characeae,3,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,260,Si,3,0,characeae,3,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,250,Si,3,0,characeae,3,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,250,Si,2,0,characeae,2,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,250,Si,2,0,ecan,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,250,Si,2,0,fanti,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,250,Si,2,0,pcrisp,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,240,Si,3,0,characeae,3,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,250,Si,2,0,characeae,2,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,240,Si,3,0,characeae,2,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,240,Si,1,1,characeae,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,240,Si,1,1,bristlyfilalg,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,240,Si,1,1,fanti,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,230,Si,1,0,characeae,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,230,Si,1,0,fanti,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,230,Si,1,0,fanti,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,220,Si,1,0,fanti,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,220,Si,0,0,,,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,200,Si,1,1,bristlyfilalg,1,cglob and nflex got confused in this section
+15.06.2009,1,boat,,270,180,Si,1,1,bristlyfilalg,1,cglob and nflex got confused in this section
+15.06.2009,2,shore,,1a,25,Co,1,0,chamCF,1,
+15.06.2009,2,shore,,1b,50,Sa,1,1,fanti,1,
+15.06.2009,2,shore,,1c,75,Co,3,0,fanti,3,
+15.06.2009,2,shore,,1c,75,Co,3,0,nopa,1,
+15.06.2009,2,shore,,1d,>75,Sa,3,0,fanti,3,
+15.06.2009,2,shore,,2a,25,Co,1,0,fanti,1,
+15.06.2009,2,shore,,2b,50 ,P,1,0,fanti,1,
+15.06.2009,2,shore,,2c,75,Si,3,0,fanti,3,
+15.06.2009,2,shore,,2d,>75,Si,1,0,fanti,1,
+15.06.2009,2,shore,,3a,25,Sa,0,0,,,
+15.06.2009,2,shore,,3b,50,Sa,1,0,casp,1,
+15.06.2009,2,shore,,3c,75,Sa,2,0,fanti,2,
+15.06.2009,2,shore,,3c,75,Sa,2,0,chamCF,1,
+15.06.2009,2,shore,,3c,75,Sa,2,0,nopa,1,
+15.06.2009,2,shore,,3d,>75cm,Si,2,0,fanti,2,
+15.06.2009,2,shore,,3d,>75cm,Si,2,0,casp,1,
+15.06.2009,2,shore,,3d,>75cm,Si,2,0,nopa,1,
+15.06.2009,2,shore,,4a,25,Si,2,0,cros,1,
+15.06.2009,2,shore,,4a,25,Si,2,0,mtri,1,
+15.06.2009,2,shore,,4a,25,Si,2,0,eflu,1,
+15.06.2009,2,shore,,4b,50,Si,1,0,fanti,1,
+15.06.2009,2,shore,,4b,50,Si,1,0,nopa,1,
+15.06.2009,2,shore,,4c,75,Si,1,0,nopa,1,
+15.06.2009,2,shore,,4d,>75,Si,2,0,fanti,1,
+15.06.2009,2,shore,,4d,>75,Si,2,0,nopa,2,
+15.06.2009,2,shore,,5a,25,Si,1,0,cros,1,
+15.06.2009,2,shore,,5a,25,Si,1,0,mtri,1,
+15.06.2009,2,shore,,5b,50,Si,1,0,nopa,1,
+15.06.2009,2,shore,,5c,75,Si,1,0,fanti,1,
+15.06.2009,2,shore,,5c,75,Si,1,0,nopa,1,
+15.06.2009,2,shore,,5d,>75,Si,0,0,,,
+15.06.2009,2,boat,,320,250,Si,2,0,characeae,2,
+15.06.2009,2,boat,,320,240,Si,2,0,characeae,2,
+15.06.2009,2,boat,,320,240,Si,1,0,characeae,1,
+15.06.2009,2,boat,,320,230,Si,0,0,,,
+15.06.2009,2,boat,,320,230,Si,1,0,characeae,1,
+15.06.2009,2,boat,,320,220,Si,0,0,characeae,1,
+15.06.2009,2,boat,,320,200,Si,3,0,characeae,3,
+15.06.2009,2,boat,,320,200,Si,3,0,fanti,1,
+15.06.2009,2,boat,,320,190,Si,3,0,characeae,3,
+15.06.2009,2,boat,,320,180,Si,3,0,characeae,3,
+15.06.2009,2,boat,,320,150,Si,3,0,characeae,3,
+15.06.2009,2,boat,,320,150,Si,3,0,fanti,2,
+15.06.2009,2,boat,,320,140,Si,2,0,characeae,1,
+15.06.2009,2,boat,,320,140,Si,2,0,fanti,2,
+15.06.2009,2,boat,,320,130,Si,3,0,characeae,2,
+15.06.2009,2,boat,,320,130,Si,3,0,fanti,3,
+15.06.2009,2,boat,,320,120,Si,3,0,fanti,3,
+15.06.2009,2,boat,,320,100,Si,2,0,fanti,2,
+15.06.2009,2,boat,,320,90,Si,2,0,fanti,2,
+15.06.2009,3,shore,,1a,25,Co,0,1,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,1b,50,Co,1,2,fanti,1,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,1c,75,Co,0,1,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,1d,>75,Co,0,2,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,2a,25,Co,0,1,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,2b,50 ,Co,0,1,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,2c,75,Co,0,2,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,2d,>75,Co,0,2,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,3a,25,Co,0,2,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,3b,50,Co,0,3,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,3c,75,Co,0,3,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,3d,>75cm,Co,0,3,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,4a,25,Co,0,1,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,4b,50,Co,1,2,casp,1,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,4c,75,Co,0,3,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,4d,>75,Co,0,3,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,5a,25,Co,0,1,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,5b,50,Co,1,3,casp,1,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,5c,75,Co,0,3,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,shore,,5d,>75,Co,0,3,,,Zannichellia palustris recorded as abundance 2 at less than 25cm
+15.06.2009,3,boat,,140,360,Si,3,0,cglob,3,
+15.06.2009,3,boat,,140,360,Si,3,0,fanti,1,
+15.06.2009,3,boat,,140,350,Si,1,0,nopa,1,
+15.06.2009,3,boat,,140,340,Si,0,0,,,
+15.06.2009,3,boat,,140,330,Si,0,0,,,
+15.06.2009,3,boat,,140,300,Si,0,0,,,
+15.06.2009,3,boat,,140,300,Si,0,0,,,
+15.06.2009,3,boat,,140,290,Si,0,0,,,
+15.06.2009,3,boat,,140,290,Si,1,1,cglob,1,
+15.06.2009,3,boat,,140,270,Si,0,0,,,
+15.06.2009,3,boat,,140,260,Si,1,0,nopa,1,
+15.06.2009,3,boat,,140,250,Si,2,0,nopa,2,
+15.06.2009,3,boat,,140,200,Co,0,0,,,
+15.06.2009,4,shore,,1a,25,Co,0,1,,,
+15.06.2009,4,shore,,1b,50,Co,0,1,,,
+15.06.2009,4,shore,,1c,75,Co,0,1,,,
+15.06.2009,4,shore,,1d,>75,Co,0,0,,,
+15.06.2009,4,shore,,2a,25,Co,0,1,,,
+15.06.2009,4,shore,,2b,50 ,Co,1,1,fanti,1,
+15.06.2009,4,shore,,2c,75,Co,0,1,,,
+15.06.2009,4,shore,,2d,>75,Co,0,1,,,
+15.06.2009,4,shore,,3a,25,Co,0,1,,,
+15.06.2009,4,shore,,3b,50,Co,0,1,,,
+15.06.2009,4,shore,,3c,75,Bo,0,1,,,
+15.06.2009,4,shore,,3d,>75cm,Co,0,0,,,
+15.06.2009,4,shore,,4a,25,Bo,0,1,,,
+15.06.2009,4,shore,,4b,50,Co,1,1,fanti,1,
+15.06.2009,4,shore,,4c,75,Co,0,1,,,
+15.06.2009,4,shore,,4d,>75,Co,0,1,,,
+15.06.2009,4,shore,,5a,25,Co,0,1,,,
+15.06.2009,4,shore,,5b,50,Co,0,1,,,
+15.06.2009,4,shore,,5c,75,Co,1,1,fanti,1,
+15.06.2009,4,shore,,5d,>75,P,0,1,,,
+15.06.2009,4,boat,,NA,350,Si,0,0,,,
+15.06.2009,4,boat,,NA,340,Si,0,0,,,
+15.06.2009,4,boat,,NA,340,Si,0,0,,,
+15.06.2009,4,boat,,NA,370,Si,0,0,,,
+15.06.2009,4,boat,,NA,340,Si,1,0,fanti,1,
+15.06.2009,4,boat,,NA,340,Si,1,0,fanti,1,
+15.06.2009,4,boat,,NA,340,Si,1,0,bristlyfilalg,1,
+15.06.2009,4,boat,,NA,340,Si,0,0,,,
+15.06.2009,4,boat,,NA,340,Si,2,0,fanti,1,
+15.06.2009,4,boat,,NA,340,Si,2,0,nopa,2,
+15.06.2009,4,boat,,NA,340,Si,0,0,,,
+15.06.2009,4,boat,,NA,330,Si,0,0,,,
+15.06.2009,4,boat,,NA,330,Si,0,0,,,
+15.06.2009,4,boat,,NA,320,Si,2,0,fanti,1,
+15.06.2009,4,boat,,NA,320,Si,2,0,nopa,1,
+15.06.2009,4,boat,,NA,320,Si,2,0,pluc,1,
+15.06.2009,4,boat,,NA,330,Si,2,0,bristlyfilalg,1,
+15.06.2009,4,boat,,NA,330,Si,2,0,pluc,2,
+15.06.2009,4,boat,,NA,320,Si,3,0,pluc,3,
+15.06.2009,4,boat,,NA,310,Si,3,0,pluc,2,
+15.06.2009,4,boat,,NA,310,Si,3,0,nopa,1,
+15.06.2009,4,boat,,NA,310,Si,1,0,nopa,1,
+15.06.2009,4,boat,,NA,310,Si,1,0,cglob,1,
+15.06.2009,4,boat,,NA,280,Si,1,0,cglob,1,
+15.06.2009,4,boat,,NA,270,Si,0,0,,,
+15.06.2009,4,boat,,NA,220,Si,0,0,,,
+15.06.2009,4,boat,,NA,180,Si,0,0,,,
+11.08.2009,1,shore,,1a,25,Co,2,1,casp,2,
+11.08.2009,1,shore,,1b,50,Co,2,0,casp,2,
+11.08.2009,1,shore,,1c,75,Co,1,0,casp,1,
+11.08.2009,1,shore,,1c,75,Co,1,0,aquamoss,1,
+11.08.2009,1,shore,,1d,>75,Si,2,0,casp,2,
+11.08.2009,1,shore,,2a,25,Co,2,0,casp,2,
+11.08.2009,1,shore,,2b,50 ,Si,3,0,casp,3,
+11.08.2009,1,shore,,2c,75,Si,3,0,casp,3,
+11.08.2009,1,shore,,2d,>75,Si,3,0,casp,3,
+11.08.2009,1,shore,,3a,25,P,2,0,casp,2,
+11.08.2009,1,shore,,3b,50,Si,3,0,casp,3,
+11.08.2009,1,shore,,3c,75,Si,3,1,casp,3,
+11.08.2009,1,shore,,3d,>75cm,Si,2,1,casp,2,
+11.08.2009,1,shore,,4a,25,Co,2,0,casp,2,
+11.08.2009,1,shore,,4b,50,Si,2,0,casp,2,
+11.08.2009,1,shore,,4c,75,Si,3,0,casp,3,
+11.08.2009,1,shore,,4d,>75,Si,2,1,casp,2,
+11.08.2009,1,shore,,5a,25,Si,0,0,,,
+11.08.2009,1,shore,,5b,50,Si,3,1,casp,3,
+11.08.2009,1,shore,,5c,75,Si,3,0,casp,3,
+11.08.2009,1,shore,,5d,>75,Si,2,0,casp,2,
+11.08.2009,1,boat,,270,100,Si,3,0,casp,3,
+11.08.2009,1,boat,,270,130,Si,2,0,casp,2,
+11.08.2009,1,boat,,270,170,Si,2,0,casp,2,
+11.08.2009,1,boat,,270,200,Si,3,0,nflexAGG,3,
+11.08.2009,1,boat,,270,180,Si,2,0,ccon,2,
+11.08.2009,1,boat,,270,200,Si,3,0,nflexAGG,3,
+11.08.2009,1,boat,,270,230,Si,2,0,nflexAGG,2,
+11.08.2009,1,boat,,270,240,Si,3,0,nflexAGG,3,
+11.08.2009,1,boat,,270,250,Si,3,0,nflexAGG,3,
+11.08.2009,1,boat,,270,170,Si,3,0,cglob,3,
+11.08.2009,1,boat,,270,260,Si,3,0,cglob,3,
+11.08.2009,1,boat,,270,320,Si,3,0,cglob,3,
+11.08.2009,2,shore,,1a,25,Co,1,0,fanti,1,done east to west
+11.08.2009,2,shore,,1b,50,Bo,2,1,fanti,2,done east to west
+11.08.2009,2,shore,,1c,75,Si,2,1,fanti,2,done east to west
+11.08.2009,2,shore,,1d,>75,Si,2,1,fanti,2,done east to west
+11.08.2009,2,shore,,2a,25,Si,0,0,,,done east to west
+11.08.2009,2,shore,,2b,50 ,Bo,2,2,fanti,2,done east to west
+11.08.2009,2,shore,,2c,75,Bo,2,2,fanti,2,done east to west
+11.08.2009,2,shore,,2d,>75,Si,2,2,fanti,2,done east to west
+11.08.2009,2,shore,,3a,25,Si,3,1,fanti,2,done east to west
+11.08.2009,2,shore,,3a,25,Si,3,1,cros,3,done east to west
+11.08.2009,2,shore,,3b,50,Si,2,2,fanti,2,done east to west
+11.08.2009,2,shore,,3b,50,Si,2,2,caspcconAGG,1,done east to west
+11.08.2009,2,shore,,3c,75,Si,2,2,fanti,2,done east to west
+11.08.2009,2,shore,,3c,75,Si,2,2,caspcconAGG,1,done east to west
+11.08.2009,2,shore,,3d,>75cm,Si,2,2,fanti,1,done east to west
+11.08.2009,2,shore,,3d,>75cm,Si,2,2,caspcconAGG,2,done east to west
+11.08.2009,2,shore,,4a,25,Si,3,2,fanti,1,done east to west
+11.08.2009,2,shore,,4a,25,Si,3,2,cros,3,done east to west
+11.08.2009,2,shore,,4b,50,Bo,1,2,,,done east to west
+11.08.2009,2,shore,,4c,75,Si,2,2,fanti,2,done east to west
+11.08.2009,2,shore,,4d,>75,Si,3,3,fanti,2,done east to west
+11.08.2009,2,shore,,5a,25,SI,3,1,fanti,2,done east to west
+11.08.2009,2,shore,,5a,25,SI,3,1,cros,3,done east to west
+11.08.2009,2,shore,,5b,50,Si,0,1,,,done east to west
+11.08.2009,2,shore,,5c,75,Si,2,3,fanti,1,done east to west
+11.08.2009,2,shore,,5d,>75,Si,2,2,fanti,2,done east to west
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
+11.08.2009,,,,,,,,,,,
