@@ -14,6 +14,6 @@ malemma <- data.frame(Site="Malham Tarn", melt(malemma, id.vars = "DateTime", me
 malemma$lessthan <- FALSE
 malemma$Measure <- "TP"
 
-saveRDS(malemma, "../dat-mod/malTP-wiik.rds")
+saveRDS(malemma, "../dat-mod/malham-wiik-TP.rds")
 
 
