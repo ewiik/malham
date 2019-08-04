@@ -1,0 +1,17 @@
+transect,location,position,bng,angle
+1,shore,start,SD8889266564,
+1,shore,end,SD8884066634,
+1,boat,start,SD8887266587,270
+1,boat,end,SD8931366681,
+2,shore,start,SD8904867187,
+2,shore,end,SD8896267189,
+2,boat,start,SD8898367180,320
+2,boat,end,SD8918866854,
+3,shore,start,SD8957666417,
+3,shore,end,SD8954066368,
+3,boat,start,SD8977766985,140
+3,boat,end,SD8942266532,
+4,shore,start,SD8979966956,
+4,shore,end,SD8976467018,
+4,boat,start,SD8954466408,NA
+4,boat,end,SD8942266532,
