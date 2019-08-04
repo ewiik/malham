@@ -1,5 +1,5 @@
 ## long-term monitoring data received probably from Environment Agency but cannot remember anymore
-## (received as part of PhD work)
+## (received as part of PhD work); corresponds to site names used by EA-online so assuming EA
 
 ##load necessary packages
 library('reshape2')
@@ -18,10 +18,8 @@ Omass <- 15.999
 pfrac <- Pmass/(Pmass+Omass*4)
 x <- pfrac*x*1000}
 
-
-
 ## read in files and make date interpretable
-mal <- read.csv("../data/Malham_data150909.csv")
+mal <- read.csv("../dat-orig/Malham_data150909.csv")
 mal$datetime <- paste(mal$DATE, mal$TIME)
 mal$datetime <- as.POSIXct(mal$datetime, format="%d-%b-%y %H%M", tz="GMT")
 
