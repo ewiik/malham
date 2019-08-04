@@ -19,23 +19,9 @@ pfrac <- Pmass/(Pmass+Omass*4)
 x <- pfrac*x*1000}
 
 ## read in files and make date interpretable
-mal <- read.csv("../dat-orig/Malham_data150909.csv")
+mal <- read.csv("../dat-orig/EA/Malham_data150909.csv")
 mal$datetime <- paste(mal$DATE, mal$TIME)
 mal$datetime <- as.POSIXct(mal$datetime, format="%d-%b-%y %H%M", tz="GMT")
-
-if(!file.exists("../data/emmatp.csv")) {
-  download.file(url="https://ndownloader.figshare.com/files/5666586", destfile="../data/emmatp.csv")
- }
-malemma <- read.csv("../data/emmatp.csv", sep = "\t", row.names = 1)
-malemma <- as.data.frame.matrix(t(malemma))
-malemma$Month <- sprintf("%02d", match(substr(rownames(malemma), 1,3), tolower(month.abb)))
-malemma$Year <- 2000 + as.numeric(substr(rownames(malemma),4,5))
-malemma$DateTime <- paste0(malemma$Month, malemma$Year)
-malemma$DateTime <- as.POSIXct(paste0(malemma$datetime,"01"), format="%m%Y%d") ## FIXME; need days of
-##    my samplings... not tidy in thesis meta..=(
-malemma <- data.frame(Site="Malham Tarn", melt(malemma, id.vars = "DateTime", measure.vars = "Mal"))
-malemma$lessthan <- FALSE
-malemma$Measure <- "TP"
 
 ## change column names to sensible options;
 ## FIXME: what is BOD ATU? what is PV.N.80.4Hrs..mg.l, how is oxidised N produced and how is orgC produced
@@ -64,12 +50,15 @@ malsub$Alk4.5 <- as.character(malsub$Alk4.5)
 malsub$Alk4.5 <- gsub(x=malsub$Alk4.5, pattern= "<",replacement= "")
 malsub$Alk4.5 <- as.numeric(malsub$Alk4.5)
 
-
+## capture those cases where detection limit is likely to be active
 mallessthan <- malsub
 mallessthan <- as.data.frame(apply(mallessthan, 2, gsub, pattern = "<", replacement=""))
 
+## =============================================================================================
+## Nitrogen
+## ====================================================================================
 ## what are the duplicated columns all about?
-## FIXME: are the complicated Ns reported as mg/L N or not?
+## FIXME: are the NH3s reported as mg/L N or not?
 malN <- melt(malsub, id.vars = c('Site','datetime'), 
              measure.vars =c('AmmNmgL','KjelNmgL','OxNmgL','NitrateNmgL','UnionNH3mgL',
                   'NDigestedugL','NitrogenNmgL','FiltNH3NmgL','FiltOxNmgL'))
@@ -80,15 +69,26 @@ malN$value <- as.numeric(malN$value)
 
 malN$value[grep('ugL', malN$variable)] <- malN$value[grep('ugL', malN$variable)]/1000
 
-allNplot <- ggplot(malN, aes(y=value, x=datetime, col=Site)) +
+realnames <- data.frame(variable=unique(malN$variable))
+realnames$NType <- c('Ammonia/um','TN','TN','Nitrate','Ammonia','TN','TN','Nitrate','TN-filtered')
+malN <- merge(malN, realnames)
+
+#allNplot <- 
+  ggplot(malN, aes(y=value, x=datetime, col=NType)) +
   papertheme +
   geom_point(aes(shape=lessthan), alpha=0.6) +
-  facet_wrap(~variable, scales='free_y')+
+  facet_wrap(~Site, scales='free_y', ncol=1)+
   theme(legend.direction = 'vertical') + labs(shape="Below detection limit") +
-  scale_color_manual(values=c("#386cb0", "#f0027f", "#bf5b17")) +
-  scale_x_datetime(date_labels = "%b %y")
+  scale_color_manual(values=c('#e66101','#fdb863','black','#b2abd2','#5e3c99')) +
+  scale_x_datetime(date_labels = "%b %y", date_breaks = '1 year') +
+    guides(color=guide_legend(ncol=3)) +
+    ylab('Nitrogen, mg/L') +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggsave(plot=allNplot, file="../figs/allNdata.pdf", width=13, height=8)
 
+## ============================================================================================
+## Phosphorus
+## ===========================================================================================
 malP <- melt(malsub, id.vars = c('Site','datetime'), 
              measure.vars =c('OrthoPmgL','FiltOrthoPmgL','PdigestedugL','FiltOrthoPmgL2','PmgL'))
 malP$lessthan <- FALSE
@@ -98,53 +98,28 @@ malP$value <- as.numeric(malP$value)
 
 malP$value[grep("Ortho", malP$variable)] <- po4top(malP$value[grep("Ortho", malP$variable)])
 malP$value[malP$variable=="PmgL"] <- malP$value[malP$variable=="PmgL"]*1000
-allPplot <- ggplot(malP, aes(y=value, x=datetime, col=Site)) +
+
+realnamesP <- data.frame(variable = unique(malP$variable))
+realnamesP$PType <- c('OrthoP','OrthoP','TP','OrthoP','TP')
+
+malP <- merge(malP, realnamesP)
+
+#allPplot <- 
+  ggplot(malP, aes(y=value, x=datetime, col=PType)) +
   papertheme + 
   geom_point(aes(shape=lessthan), alpha=0.6) +
-  facet_wrap(~variable, scales='free_y', ncol=2) +
+  facet_wrap(~Site, scales='free_y', ncol=1) +
   ylab("P (ug/L) (converted from all cases)") +
-  geom_hline(yintercept = 15) + # CSM limit for Malham Tarn-depth lakes in TP 
+  geom_hline(yintercept = 12) + # CSM limit for Malham Tarn-depth lakes in TP 
   theme(legend.direction = 'vertical') + labs(shape="Below detection limit") +
   scale_color_manual(values=c("#386cb0", "#f0027f", "#bf5b17")) +
-  scale_x_datetime(date_labels = "%b %y")
+  scale_x_datetime(date_labels = "%b %y", date_breaks = '1 year') +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggsave(plot=allPplot, file="../figs/allPdata.pdf",height=8, width=13)
 
-## select most sensible nutrient variables for plotting:
-## N: NitrateNmgL, NdigestedugLOXNmgL, AmmNmgL
-## P: Pdigested, pmgl (assume comparable for now FIXME)
-malP$Measure <- "TP"
-malP$Measure[grep("Ortho", malP$variable)]<- "OrthoP"
-malP <- rbind(malP, malemma)
-
-subPplot <-
-  ggplot(na.omit(malP[malP$Measure=="TP",]), aes(y=value, x=datetime, col=Site)) +
-  papertheme + 
-  geom_point(aes(shape=lessthan), alpha=0.6) +
-  ylab("P (ug/L) (converted from all cases)") +
-  geom_hline(yintercept = 15) + # CSM limit for Malham Tarn-depth lakes in TP 
-  theme(legend.direction = 'vertical', axis.text.x = element_text(angle=90)) + labs(shape="Below detection limit") +
-  scale_color_manual(values=c("#386cb0", "#f0027f", "#bf5b17")) +
-  scale_x_datetime(date_labels = "%b %y", date_breaks = "3 months")
-ggsave(plot=subPplot, file="../figs/subPdata.pdf",height=8, width=13)
-
-malNsub <- malN[which(malN$variable %in% c("NitrateNmgL", "NdigestedugL", "OxNmgL", "AmmNmgL")),]
-malNsub$Measure <- "TN"
-malNsub$Measure[grep("Amm", malNsub$variable)] <- "Ammonium-N"
-malNsub$Measure[grep("Nitrat", malNsub$variable)] <- "Nitrate-N"
-malNsub$Measure[grep("Ox", malNsub$variable)] <- "Oxidised N"
-
-subNplot <-
-  ggplot(na.omit(malNsub), aes(y=value, x=datetime, col=Site)) +
-  papertheme + 
-  geom_point(aes(shape=lessthan), alpha=0.6) +
-  ylab("N (mg/L) (converted from all cases)") +
-  theme(legend.direction = 'vertical', axis.text.x = element_text(angle=90)) + labs(shape="Below detection limit") +
-  scale_color_manual(values=c("#386cb0", "#f0027f", "#bf5b17")) +
-  scale_x_datetime(date_labels = "%b %y", date_breaks = "3 months") +
-  facet_wrap(~Measure, ncol=1)
-ggsave(plot=subNplot, file="../figs/subNdata.pdf",height=8, width=13)
-
+## ====================================================================================================
 ## oxygen etc.
+## =================================================================================================
 malOx <- melt(malsub, id.vars = c("Site","datetime"), 
               measure.vars = c("Orel","Oabs","BODmgL","Colour","OrgCmgL","Orel2" ,"Oabs2"))
 malOx$lessthan <- FALSE
@@ -154,13 +129,14 @@ malOx$value <- as.numeric(malOx$value)
 malOx$variable[grep("Orel2", malOx$variable)] <- "Orel" # seem to be a continuation saved as diff name
 malOx$variable[grep("Oabs2", malOx$variable)] <- "Oabs"
 
-ggplot(malOx, aes(y=value, x=datetime, col=Site)) +
+ggplot(malOx[malOx$variable %in% c('Orel','BODmgL'),], aes(y=value, x=datetime, col=Site)) +
   papertheme + 
+  geom_path() +
   geom_point(aes(shape=lessthan), alpha=0.6) +
-  ylab("N (mg/L) (converted from all cases)") +
-  theme(legend.direction = 'vertical', axis.text.x = element_text(angle=90)) + labs(shape="Below detection limit") +
+  ylab("Oxygen (% or mg/L)") +
+  theme(legend.direction = 'vertical', axis.text.x = element_text(angle=40, hjust=1)) + labs(shape="Below detection limit") +
   scale_color_manual(values=c("#386cb0", "#f0027f", "#bf5b17")) +
-  scale_x_datetime(date_labels = "%b %y", date_breaks = "3 months") +
+  scale_x_datetime(date_labels = "%b %y", date_breaks = "1 year") +
   facet_wrap(~variable, ncol=1, scales="free_y")
 
 ## other remaining vars
@@ -171,7 +147,8 @@ ggplot(na.omit(malchl), aes(x=datetime, y=value)) +
   geom_point(aes(col=Site), alpha=0.6)+
   scale_color_manual(values=c("#386cb0", "#f0027f", "#bf5b17"))
 
-pHplot <- ggplot(malsub[-which(is.na(malsub$datetime)),], aes(y=pH, x=datetime)) +
+#pHplot <- 
+  ggplot(malsub[-which(is.na(malsub$datetime)),], aes(y=pH, x=datetime)) +
   papertheme +
   geom_point(aes(col=Site),alpha=0.6) +
   scale_color_manual(values=c("#386cb0", "#f0027f", "#bf5b17")) +
@@ -204,7 +181,7 @@ ggplot(malsub[-which(is.na(malsub$datetime)),], aes(y=pH, x=datetime)) +
   facet_wrap(~Site, ncol=1)
 
 ## save some processed data
-saveRDS(malP, "../data/dat-mod/malP-decadal.rds")
-saveRDS(malN, "../data/dat-mod/malN-decadal.rds")
+saveRDS(malsub, "../dat-mod/malham-EA-decadal.rds")
+saveRDS(malP, "../dat-mod/malham-EA-P-decadal.rds")
+saveRDS(malN, "../dat-mod/malham-EA-N-decadal.rds")
 
-saveRDS(malemma, "../data/dat-mod/malTP-wiik.rds")
