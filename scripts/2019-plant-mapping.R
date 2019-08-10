@@ -1,4 +1,4 @@
-##  figures for livelihood paper
+##  mapping of 2019 survey data
 
 ## get libraries
 library('ggplot2')
