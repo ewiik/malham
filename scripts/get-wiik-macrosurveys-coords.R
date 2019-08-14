@@ -17,12 +17,8 @@ mac <- read.csv("../dat-orig/wiiketal/mal-plantsurveys-wiikphd.csv")
 
 ## these coordinates are in bng with letters, which needs changing
 ##    4 needs to go before easting, and 3 before northing
-where$Easting <- paste0(4,substr(where$bng, 3, 7))
-where$Northing <- paste0(3,substr(where$bng, 8, 12))
-
-## ### shortcuts
-ukgrid <- "+init=epsg:27700"
-latlong <- "+init=epsg:4326"
+where$Easting <- paste0(3,substr(where$bng, 3, 7))
+where$Northing <- paste0(4,substr(where$bng, 8, 12))
 
 ### Create coordinates variable
 coords <- cbind(Easting = as.numeric(where$Easting),
@@ -31,10 +27,10 @@ coords <- cbind(Easting = as.numeric(where$Easting),
 ### Create the SpatialPointsDataFrame
 where <- SpatialPointsDataFrame(coords,
                                  data = where,
-                                 proj4string = CRS("+init=epsg:27700"))
+                                 proj4string = CRS("+init=epsg:27700")) # code for bng
 
 ### Convert
-where <- spTransform(where, CRS(latlong))
+where <- spTransform(where, CRS("+init=epsg:32629")) #utm suitable for uk
 
 ## create Lat, Long
 where@data$Long <- coordinates(where)[, 1]
@@ -61,7 +57,7 @@ bsum <- split(bsum, bsum$transect)
 bdat <- split(dat[dat$location=='boat',], dat[dat$location=='boat','transect'], drop = T)
 
 sdat <- split(dat[dat$location=='shore',],dat[dat$location=='shore','transect'], drop = T)
-spts <- data.frame(pts = 4, date=unique(mac$date))
+spts <- data.frame(pts = 5, date=unique(mac$date))
 
 ## function to get the sample points
 getPts <- function(df,lendf) {
@@ -90,15 +86,17 @@ bcoords$location <- 'boat'
 
 scoords <- lapply(sdat,getPts, lendf= spts)
 scoords <- do.call(rbind, scoords)
-scoords$section <- paste0(scoords$transect, letters[scoords$section])
+names(scoords)[which(names(scoords)=='section')] <- 'basesection'
+
+tomerge <- expand.grid(1:5, letters[1:4],KEEP.OUT.ATTRS=F, stringsAsFactors = F)
+tomerge$Var2 <- paste(tomerge$Var1, tomerge$Var2, sep='')
+names(tomerge) <- c('basesection','section')
+scoords <- merge(scoords,tomerge)
 scoords$location <- 'shore'
+scoords <- scoords[,-which(names(scoords) =='basesection')]
 
 allcoords <- rbind(scoords, bcoords)
-
-ggplot(mac, aes(x=Long, y=Lat)) +
-  geom_point(data=mac[mac$species=='casp',], aes(color=abundance)) +
-  geom_line(data=dat, aes(group=interaction(location, transect))) +
-  facet_wrap(~date)
+names(allcoords)[1:2] <- tolower(names(allcoords)[1:2]) # to align with 2019 names
 
 ## merge with original macrophyte survey
 mac <- merge(mac, allcoords)
@@ -107,13 +105,6 @@ mac <- merge(mac, allcoords)
 mac$date <- as.POSIXct(mac$date, tz='GMT',format='%d.%m.%Y')
 mac$year <- format(mac$date, "%Y")
 
-## create aggregate codes for charophytes
-aggs <- data.frame(species=unique(mac$species))
-aggs$group <- c('Chara','Chara','Nitella','Chara','Moss','Moss','',#the rows with no species
-                'PotEut','Elodea','Chara','Chara','PotEut','Callitriche','Chara',
-                'Zannichellia','PotLuc','Balls','Epiphyte','FilAlg','Characeae','Nitella',
-                'Chara','Chara','Epiphyte')
-mac <- merge(mac, aggs)
-
 ## save
 saveRDS(mac, '../dat-mod/mal-plantsurveys-wiikphd.rds')
+saveRDS(dat, '../dat-mod/mal-plantsurveys-wiikphd-transects.rds')
