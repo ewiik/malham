@@ -5,6 +5,8 @@ library(gridExtra)
 library(extrafont)
 loadfonts()
 
+## FIXME: difference between biomass and abundance in phd surveys
+
 ## read in data
 plants <- readRDS("../dat-mod/mal-plantsurvey-2019-plants.rds")
 peri <- readRDS("../dat-mod/mal-plantsurvey-2019-perimeter.rds")
@@ -47,6 +49,12 @@ aggs$Plant <- c('No plants','Elodea','Chara','Chara','FilAlg','Moss','Nitella','
 ## merge agg names with plant survey data from all years
 plants <- merge(plants, aggs)
 oplants <- merge(oplants, oaggs)
+
+## FIXME: probs wortj assigning NA to 0 for abundance in oplants
+oplants$species[oplants$transect==1 & oplants$section=='4d' & 
+                  oplants$depth==75 & oplants$biomass==0] <- ''
+
+plants$plantheight[is.na(plants$plantheight)] <- 0 # these are fil alg and one 0 biomass site
 
 ## =============================================================================================
 ## plots of individual species and years
@@ -124,10 +132,11 @@ ggplot(df, aes(x=long,y=lat)) +
 ## =============================================================================================
 ## higher-summary figures of plant cover
 ## =============================================================================================
+## summarise plantcover over all substrates and depths
 malsum <- ddply(plants, .(point), summarise, plantcover=sum(plantcover, na.rm=T), 
                 substrate = substrate[1],
                 long=long[1], lat=lat[1], depth=depth[1], 
-                height=mean(plantheight))
+                height=mean(plantheight, na.rm = T))
 
 subcodes <- data.frame(substrate = unique(malsum$substrate))
 subcodes$GrainSize <- c(9,8,4,7,2,10,5,3,1,6,10)
@@ -163,25 +172,133 @@ ggplot(omalsum) +
 ggplot(malsum) +
   papertheme +
   geom_path(data=peri, aes(long,lat,group=group) ,color="black") +
-  geom_point(aes(x=coords.x1, y=coords.x2, color=height > 20, size=GrainSize)) +
+  geom_point(aes(x=long, y=lat, color=height > 20, size=GrainSize)) +
   #scale_color_viridis() +
   geom_contour(data=bath, inherit.aes = F, aes(x=long, y=lat, z=z)) +
   coord_equal()
 
-## plant cover vs depth
-ggplot(malsum[grep('silt', malsum$substrate),],aes(x=depth, y=plantcover)) +
+## interpolate plant height for geom_contour which likes regular intervals
+fld <- with(malsum[complete.cases(malsum[,c('long','lat','height')]),], 
+            interp(x = long, y = lat, z = height))
+
+df <- melt(fld$z, na.rm = TRUE)
+names(df) <- c("x", "y", "z")
+df$z[df$z>100] <- 100
+
+df$long <- fld$x[df$x]
+df$lat <- fld$y[df$y]
+
+ggplot(malsum) +
+  papertheme +
+  geom_path(data=peri, aes(long,lat,group=group) ,color="black") +
+  geom_tile(data=df, aes(x=long, y=lat, fill=z)) +
+  scale_fill_gradientn(colours = c("#7b3294","white","#008837"), 
+                                   values = rescale(c(0,20,100)),
+                                   guide = "colorbar", limits=c(0,100)) +
+  #geom_point(aes(x=long, y=lat, fill=height), shape=21, color='black', size=2.5) +
+  geom_contour(data=bath, inherit.aes = F, aes(x=long, y=lat, z=z)) +
+  coord_equal()
+## plant cover vs depth on silt: recode and merge to put on same plot
+distro <- malsum[grep('silt', malsum$substrate),c('plantcover','depth')]
+distro$Survey <- '2019'
+
+distro <- rbind.fill(distro, omalsum[grep('Si', omalsum$substrate),c('plantcover','depth')])
+distro$plantcover[is.na(distro$Survey)] <- distro$plantcover[is.na(distro$Survey)] * 25
+distro$plantcover[distro$plantcover==-Inf] <- 0
+
+distro$Survey[is.na(distro$Survey)] <- '2009/2010'
+
+ggplot(distro,aes(x=depth, y=plantcover, group=Survey, col=Survey)) +
   papertheme +
   geom_point(alpha=0.5) +
   stat_smooth(method = 'gam',formula = y ~ s(x, bs = "cs")) +
-  ylab('Plant cover (%)') + xlab('Depth (cm)')
+  ylab('Plant cover on silt (%)') + xlab('Depth (cm)')
 
-ggplot(omalsum[grep('Si', omalsum$substrate),],aes(x=depth, y=plantcover)) +
+## chara depth distribution (including nitella/chara uncertainty)
+chara <- ddply(plants[plants$Plant=='Chara',], .(point), summarise, plantcover=sum(plantcover, na.rm=T), 
+                substrate = substrate[1],
+                long=long[1], lat=lat[1], depth=depth[1], Plant='Chara',
+                height=mean(plantheight), survey='2019')
+
+ochara <- ddply(oplants[oplants$Plant=='Chara',], .(date,transect, section), summarise, 
+                plantcover=max(abundance, na.rm=T), 
+               substrate = substrate[1],
+               long=long[1], lat=lat[1], depth=depth[1], Plant='Chara', survey='2009/2010')
+
+ocharo <- ddply(oplants[grep('Chara', oplants$Plant),], .(date,transect, section), summarise, 
+                plantcover=max(abundance, na.rm=T), 
+                substrate = substrate[1],
+                long=long[1], lat=lat[1], depth=depth[1], Plant='Charophytes', survey='2009/2010')
+
+nit<- ddply(plants[plants$Plant=='Nitella',], .(point), summarise, plantcover=sum(plantcover, na.rm=T), 
+               substrate = substrate[1],
+               long=long[1], lat=lat[1], depth=depth[1], Plant='Nitella',
+               height=mean(plantheight), survey='2019')
+
+onit <- ddply(oplants[oplants$Plant=='Nitella',], .(date,transect, section), summarise, 
+                plantcover=max(abundance, na.rm=T), 
+                substrate = substrate[1],
+                long=long[1], lat=lat[1], depth=depth[1], Plant='Nitella', survey='2009/2010')
+
+keys <- rbind.fill(chara, ochara, nit, onit) # checked ocharo and the regression is same
+keys$plantcover[keys$survey=='2009/2010'] <- keys$plantcover[keys$survey=='2009/2010'] * 10+ 
+  (keys$plantcover[keys$survey=='2009/2010'] - 1) * 20
+
+charadist <- ggplot(keys,aes(x=depth, y=plantcover, group=survey, col=survey)) +
   papertheme +
   geom_point(alpha=0.5) +
-  stat_smooth(method = 'gam',formula = y ~ s(x, bs = "cs")) +
-  ylab('Plant cover score') + xlab('Depth (cm)')
+  stat_smooth(method = 'gam',method.args = list(family = "tw"),
+              formula = y ~ s(x, bs = "cs"), fullrange=F) +
+  facet_wrap(~Plant) +
+  ylab('Charophyte cover (%)') + xlab('Depth (cm)')
 
-max(plants$depth[grep('chara', plants$species)], na.rm = T)  
+font<- ddply(plants[plants$Plant=='Moss',], .(point), summarise, plantcover=sum(plantcover, na.rm=T), 
+            substrate = substrate[1],
+            long=long[1], lat=lat[1], depth=depth[1], Plant='Nitella',
+            height=mean(plantheight), survey='2019')
+
+ofont <- ddply(oplants[oplants$Plant=='Moss',], .(date,transect, section), summarise, 
+              plantcover=max(abundance, na.rm=T), 
+              substrate = substrate[1],
+              long=long[1], lat=lat[1], depth=depth[1], Plant='Nitella', survey='2009/2010')
+
+fontinalis <- rbind.fill(font, ofont) 
+fontinalis$plantcover[fontinalis$survey=='2009/2010'] <- 
+  fontinalis$plantcover[fontinalis$survey=='2009/2010'] * 10 + 
+  (fontinalis$plantcover[fontinalis$survey=='2009/2010'] - 1) * 20
+
+fontdist <- ggplot(fontinalis,aes(x=depth, y=plantcover, group=survey, col=survey)) +
+  papertheme +
+  geom_point(alpha=0.5) +
+  stat_smooth(method = 'gam',method.args = list(family = "tw"),
+              formula = y ~ s(x, bs = "cs"), fullrange=F) +
+  ylab('Fontinalis cover (%)') + xlab('Depth (cm)')
+
+elo <- ddply(plants[plants$Plant=='Elodea',], .(point), summarise, plantcover=sum(plantcover, na.rm=T), 
+             substrate = substrate[1],
+             long=long[1], lat=lat[1], depth=depth[1], Plant='Nitella',
+             height=mean(plantheight), survey='2019')
+
+oelo <- ddply(oplants[oplants$Plant=='Elodea',], .(date,transect, section), summarise, 
+               plantcover=max(abundance, na.rm=T), 
+               substrate = substrate[1],
+               long=long[1], lat=lat[1], depth=depth[1], Plant='Nitella', survey='2009/2010')
+
+elodea <- rbind.fill(elo, oelo) 
+elodea$plantcover[elodea$survey=='2009/2010'] <- 
+  elodea$plantcover[elodea$survey=='2009/2010'] * 10 + 
+  (elodea$plantcover[elodea$survey=='2009/2010'] - 1) * 20
+
+elodist <- 
+  ggplot(elodea,aes(x=depth, y=plantcover, group=survey, col=survey)) +
+  papertheme +
+  geom_point(alpha=0.5) +
+  stat_smooth(method = 'gam',method.args = list(family = "tw"),
+              formula = y ~ s(x, bs = "cs"), fullrange=F) +
+  ylab('Elodea cover (%)') + xlab('Depth (cm)')
+
+speciesplots <- grid.arrange(charadist, fontdist, elodist, layout_matrix=rbind(c(1,1),c(2,3)))
+ggsave('../figs/species-depths.png', speciesplots, width=7, height=7)
 
 ## ======================================================================================
 ## increases in fil alg cover
@@ -230,4 +347,52 @@ shallows <-
 
 algplot <- grid.arrange(algae, shallows, ncol=2)
 
-ggsave('../figs/filalg-abundance.pdf',algplot, width=7, height=5)
+ggsave('../figs/filalg-abundance.png',algplot, width=7, height=5)
+
+## ==========================================================================
+## overall decline of macrophyte cover
+## ============================================================================
+## occurrence of plants in areas where we expect them (ie limit to silt for simplicity)
+silt <- malsum[grep('silt',malsum$substrate),]
+silt$survey <- '2019'
+osilt <- omalsum[omalsum$substrate=='Si',]
+osilt$survey <- '2009/2010'
+
+silt <- rbind.fill(silt, osilt)
+
+siltplot <- 
+  ggplot(peri, aes(x=long,y=lat)) +
+  papertheme +
+  geom_path(aes(group=group),color="black") +
+  geom_contour(data=bath, aes(z=z), col='grey',size=0.1) + 
+  geom_point(data=silt,aes(color=survey)) +
+  #geom_line(data=trans[trans$location=='shore',], aes(group=transect),
+            #size=2, alpha=0.7) +
+  # scale_color_manual('Survey',values=c('transparent','black')) +
+  coord_equal() + theme(legend.box='vertical', axis.title = element_blank(),
+                        axis.text = element_blank())
+
+occplot <- 
+  ggplot(silt, aes(x=survey, group=plantcover > 0, fill=plantcover > 0)) +
+  papertheme +
+  geom_bar() +
+  scale_fill_manual('Plant cover',values=c('#a6611a','#018571')) +
+ylab('Survey points on silt; including \n repeated points 2009/2010')
+
+depthplot <-
+  ggplot(silt, aes(x=depth, group=survey, col=survey)) +
+  geom_density() +
+    papertheme + xlab('Depth (cm)') + ylab('Density distribution')
+
+occupancy <- grid.arrange(siltplot, occplot, depthplot, layout_matrix=rbind(c(2,3),c(2,1)))
+ggsave("../figs/plant-occupancy.png", occupancy, height=10, width=8)
+
+# quick proportional test on whether significantly different
+table(silt$survey, silt$plantcover>0)
+prop.test(x = c(168, 96), n = c(168+21, 96+76))
+
+## chara bed distribution across depth
+
+
+## percentage occurrence of chara aspera and chara glob in survey? or just chara?
+## ==============================================================================
