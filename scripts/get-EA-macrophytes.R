@@ -1,5 +1,4 @@
 ## EA macrophyte surveys
-## FIXME: make shoreline gps points next
 
 ## packages
 library(rgdal)
@@ -16,7 +15,12 @@ papertheme <- theme_bw(base_size=12, base_family = 'ArialMT') +
   theme(legend.position='top')
 
 mdb <- mdb.get("../dat-orig/EA/sca_database_v2.2_2007_2019_Malham_data.mdb")
+fv <- read.csv("../dat-orig/EA/2004-2004surveys-longformat.csv")
+fvcoords <- read.csv("../dat-orig/EA/2004-2005-coordinates.csv")
 
+## ====================================================================================
+## database format data
+## =================================================================================
 head(mdb$LHS_BoatSurvey) # depht, fil alg and biomass; ID, sectionID
 head(mdb$LHS_BoatSurveyData) # species in sample point; ID, BoatSurveyID
 #head(mdb$LHS_Survey) # dates and IDs of surveys with who dunnit; ID does not map to above; ID should be
@@ -196,14 +200,162 @@ alldat <- alldat[,-which(names(alldat)=='ID')] # each row had its own ID...
 # now can remove duplicated no plants entires
 alldat <- alldat[-which(duplicated(alldat)),]
 
-## some plotting
-want <- 'Utricularia' # Chara Potamogeton Hippuris Fontinalis Nitella No plants
 
-ggplot(alldat[grep(want,alldat$PlantSpecies),], aes(x=Long,y=Lat)) +
+#W ==============================================================================================
+## individual csv data
+##============================================================================================
+## number of open water points in all of these are 10
+fvcoords$SurveyDate <- as.POSIXct(as.character(fvcoords$date), format='%d/%m/%y', tz='UK')
+
+fv$SurveyDate <- as.POSIXct(as.character(fv$date), format='%d.%m.%Y', tz='UK')
+
+fvcoords$Easting <- paste0(3,substr(fvcoords$bng[fvcoords$bng!=''], 3, 7))
+fvcoords$Northing <- paste0(4,substr(fvcoords$bng[fvcoords$bng!=''], 8, 12))
+
+### Create coordinates variable
+coords <- cbind(Easting = as.numeric(fvcoords$Easting),
+                Northing = as.numeric(fvcoords$Northing))
+
+### Create the SpatialPointsDataFrame
+fvcoords <- SpatialPointsDataFrame(coords,
+                                data = fvcoords[complete.cases(fvcoords),],
+                                proj4string = CRS("+init=epsg:27700")) # code for bng
+
+### Convert
+fvcoords <- spTransform(fvcoords, CRS("+init=epsg:32629")) #utm suitable for uk
+
+## create Lat, Long
+fvcoords@data$Long <- coordinates(fvcoords)[, 1]
+fvcoords@data$Lat <- coordinates(fvcoords)[, 2]
+
+##  make things compatible
+fv$date <- fv$SurveyDate
+fvcoords$date <- fvcoords$SurveyDate
+
+## check where things map to:
+dat <- data.frame(fvcoords)
+
+## generate 10 coordinates for transects 1:10 for each boat and shore survey
+sdat <- with(dat[dat$location=='boat',], split(dat[dat$location=='boat',], list(transect,date)))
+
+sdats <- with(dat[dat$location=='shore',], split(dat[dat$location=='shore',], list(transect,date)))
+
+getPts <- function(df,lendf) {
+  transect <- df$transect[1]
+  whichlen <- lendf
+  
+  tempdf <- df[,c('Long','Lat')] %>% group_by(group = Long %in% range(Long)) %>% 
+    # summarize lat and lon for each group into a list of a sequence from the first to the second
+    summarise_each(funs(list(seq(.[1], .[2], length.out = whichlen)))) %>% 
+    # expand list columns with tidyr::unnest
+    unnest()
+  tempdf <- as.data.frame(tempdf)
+  tempdf$transect <- transect
+  #tempdf$SectionID <- df$SectionID[1]
+  tempdf$point <- seq(1, whichlen,  1)
+  tempdf$date <- df$date[1]
+  tempdf <- tempdf[,-which(names(tempdf)=='group')]
+  
+  return(tempdf)
+}
+
+bcoords <- lapply(sdat, getPts,lendf=10)
+bcoords <- do.call(rbind, bcoords)
+bcoords$location <- 'boat'
+rownames(bcoords) <- NULL
+
+scoords <- lapply(sdats, getPts,lendf=5)
+scoords <- do.call(rbind, scoords)
+scoords$location <- 'shore'
+
+names(scoords)[which(names(scoords)=='point')] <- 'basesection'
+
+tomerge <- expand.grid(1:5, letters[1:4],KEEP.OUT.ATTRS=F, stringsAsFactors = F)
+tomerge$Var2 <- paste(tomerge$Var1, tomerge$Var2, sep='')
+names(tomerge) <- c('basesection', 'point')
+
+scoords <- merge(scoords,tomerge)
+scoords <- scoords[,-which(names(scoords) =='basesection')]
+
+fv <- fv[,-which(names(fv)=='SurveyDate')]
+fvcoords <- fvcoords[,-which(names(fvcoords)=='SurveyDate')]
+names(fv)[names(fv)=='section'] <- 'point'
+
+alldatb <- merge(fv[fv$location=='boat',], bcoords)
+alldatsb <- merge(fv[fv$location=='shore',], scoords)
+
+alldatsb$depth <- as.character(alldatsb$depth)
+alldatsb$depth[grep('>', alldatsb$depth)] <- 80
+alldatb$depth <- as.character(alldatb$depth)
+
+alldatb <- rbind.fill(alldatb, alldatsb)
+alldatb$speciestype <- 'binary'
+alldat$speciestype <- 'numeric'
+
+names(alldat) <- tolower(names(alldat))
+names(alldatb) <- tolower(names(alldatb))
+
+names(alldat)[!names(alldat) %in% names(alldatb)] <- c("sectionid","boatsurveyid",'biomass','species',
+                                                        'transect','wadersurveyid')
+
+## put them together
+alldat <- rbind.fill(alldatb, alldat)
+
+alldat$species[which(alldat$species=='')] <- 'No plants'
+
+## create aggregate codes for plants to identify key information
+oaggs <- data.frame(species=unique(alldat$species))
+oaggs$Plant <- c('Chara','Chara','Elodea','Moss','Nitella','PotEut','PotEut','Chara','No plants',
+                 'PotLuc','PotEut','Tolypella','Chara','NA','Carex','Menyanthes','Callitriche',
+                 'Nitella','Chara','Fontinalis','PotLuc','Elodea','Nitella','Chara','Utricularia',
+                 'Chara','Callitriche','Chara','PotEut','Callitriche','Carex','Equisetum','Menyanthes',
+                 'Nitella','Hippuris','Moss')
+oaggs$fullname <- oaggs$species                 
+more <- as.numeric(rownames(oaggs)[apply(oaggs,2,nchar)[,'fullname']<10 & !is.na(oaggs$fullname)]  ) 
+oaggs$fullname <- as.character(oaggs$fullname)
+oaggs$fullname[more] <- c('Chara aspera','Chara globularis','Elodea canadensis','Fontinalis antipyretica',
+                          'Nitella flexilis agg.','Potamogeton pectinatus','Potamogeton berchtoldii',
+                          'No plants','Potamogeton lucens',
+                          'Potamogeton crispus','Tolypella glomerata','Chara virgata','Carex rostrata',
+                          'Menyanthes trifoliata','Callitriche hamulata cf')
+
+alldat <- merge(alldat, oaggs, sort=F )
+alldat$date <- format(alldat$date, '%Y-%m-%d')
+
+allcoords <- fvcoords@data
+somecoords <- where@data
+somecoords <- subset(somecoords, select = c('SurveyDate','Section','SectionNumber','Long','Lat','variable'))
+names(somecoords) <- c('date','location','transect','Long','Lat','end')
+somecoords$location <- tolower(somecoords$location)
+somecoords$end <- 'start'
+somecoords$end <- ifelse(length(grep('Shore', somecoords$end))==0, 'end','start')
+
+allcoords <- rbind.fill(allcoords[,c('date','location','end','transect','Long','Lat')],somecoords)
+allcoords$date <- format(allcoords$date, '%Y-%m-%d')
+
+## some plotting
+want <- 'Chara' # Chara Potamogeton Hippuris Fontinalis Nitella No plants Utricularia
+
+ggplot(alldat[grep(want,alldat$Plant),], aes(x=long,y=lat)) +
   papertheme +
   #geom_path(data=peri, aes(group=group),color="black") +
-  geom_point(aes(size=factor(abundance), fill=PlantSpecies), shape=21, color='black',alpha=0.7) +
-  facet_wrap(~date) 
+  geom_point(aes(size=factor(biomass), fill=fullname), shape=21, color='black',alpha=0.7) +
+  facet_wrap(~factor(date) ) +
+  geom_line(data=allcoords, aes(x=Long, y=Lat,group=interaction(date, transect, location))) 
 
+sumdat <- ddply(alldat, .(date, transect, location, point), summarise, biomass=max(biomass, na.rm = T),
+                long=long[1], lat=lat[1])  
+sumdat$biomass[sumdat$biomass==-Inf] <- NA
+
+ggplot(sumdat, aes(x=long,y=lat, colour=factor(biomass))) +
+  papertheme +
+  #geom_path(data=peri, aes(group=group),color="black") +
+  geom_point(alpha=0.7, size=3) +
+  facet_wrap(~factor(date) ) +
+  scale_colour_manual(values=c('#a6611a','#dfc27d','#80cdc1','#018571')) +
+  geom_line(inherit.aes=F, data=allcoords, aes(x=Long, y=Lat,group=interaction(date, transect, location))) 
+
+## ==============================================================================================
 ## save data
-saveRDS(alldat, '../dat-mod/mal-plantsurveys-ea-db.rds')
+saveRDS(alldat, '../dat-mod/mal-plantsurveys-ea-db-xlsx.rds')
+saveRDS(allcoords, "../dat-mod/mal-plantsurveys-ea-coords.rds")
