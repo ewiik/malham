@@ -9,6 +9,7 @@ library(Hmisc)
 library(reshape2)
 library(ggplot2)
 library(tidyr)
+library(dplyr)
 
 ## create a theme to save linespace in plots
 papertheme <- theme_bw(base_size=12, base_family = 'ArialMT') +
