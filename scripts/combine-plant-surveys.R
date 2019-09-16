@@ -3,10 +3,10 @@ library(reshape2)
 library(plyr)
 
 ## read in data
-plants <- readRDS("../dat-mod/mal-plantsurvey-2019-plants.rds")
 peri <- readRDS("../dat-mod/mal-plantsurvey-2019-perimeter.rds")
 bath <- readRDS("../dat-mod/mal-plantsurvey-2019-bathy.rds")
 
+plants <- readRDS("../dat-mod/mal-plantsurvey-2019-plants.rds")
 oplants <- readRDS("../dat-mod/mal-plantsurveys-wiikphd.rds")
 trans <- readRDS('../dat-mod/mal-plantsurveys-wiikphd-transects.rds')
 names(trans) <- tolower(names(trans))

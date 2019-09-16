@@ -10,70 +10,55 @@ library(plyr)
 papertheme <- theme_bw(base_size=12, base_family = 'ArialMT') +
   theme(legend.position='top')
 
-## FIXME: difference between biomass and abundance in phd surveys
 ## read data
-saveRDS(alltrans, '../dat-mod/all-plant-transects.rds')
-saveRDS(allplants, '../dat-mod/all-plant-surveys.rds')
-saveRDS(subplants,'../dat-mod/all-plant-surveys-nospecies.rds')
+alltrans <- readRDS('../dat-mod/all-plant-transects.rds')
+allplants <- readRDS('../dat-mod/all-plant-surveys.rds')
+subplants <- readRDS('../dat-mod/all-plant-surveys-nospecies.rds')
+
+peri <- readRDS("../dat-mod/mal-plantsurvey-2019-perimeter.rds")
+bath <- readRDS("../dat-mod/mal-plantsurvey-2019-bathy.rds")
+
+## correct Fontinalis to moss in 2019
+allplants$Plant[allplants$Plant=='Fontinalis'] <- 'Moss'
+
+## create subsets for when we might want to remove poor data 
+poorplants <- allplants
+poorsubplants <- subplants
+
+allplants <- allplants[-which(allplants$poor=='yes'),]
+subplants <- subplants[-which(subplants$poor=='yes'),]
 
 ## =============================================================================================
-## plots of individual species and years
+## plots with species information
 ## ====================================================================================
+# declare list of most interesting groups
+want <- c('Balls','Callitriche','Chara','Elodea','Characeae','Fontinalis','Nitella','No plants' ,
+          'PotEut','PotLuc','Tolypella','Utricularia','Zannichellia','Moss')
+
+# csm with and without species abundance
+pwant <- allplants[allplants$survey=='csm' & allplants$speciestype== 'numeric'& 
+                     allplants$Plant %in% want,]
+pwant2 <- allplants[allplants$survey=='csm' & allplants$Plant %in% want,]
+
+# plant cover by species in 2019
 #pplot <- 
   ggplot(allplants[allplants$year==2019,], aes(x=long,y=lat)) +
   papertheme +
   geom_path(data=peri, aes(group=group),color="black") +
   geom_point(aes(fill=plantcover), shape=21, color='black') +
   geom_contour(data=bath, aes(z=z)) + 
-  facet_wrap(~species) +
+  facet_wrap(~fullname) +
   scale_fill_viridis(option='viridis')
 
-want <- c('Balls','Callitriche','Chara','Elodea','Characeae','Fontinalis','Nitella','No plants' ,
-          'PotEut','PotLuc','Tolypella','Utricularia','Zannichellia','Moss')
-#opplot <- 
-  ggplot(allplants[allplants$survey=='csm' & !allplants$year %in% c('2011','2004') & 
-                     allplants$Plant %in% want,], aes(x=long,y=lat)) +
-  papertheme +
-  geom_path(data=peri, aes(group=group),color="black") +
-  geom_point(aes(fill=factor(abundance)), shape=21, color='black',size=2, alpha=.7) +
-  geom_contour(data=bath, aes(z=z)) + 
-  geom_line(data=alltrans[alltrans$missing=='yes',],  
-           aes(x=long, y=lat, group=interaction(factor(transect), location,factor(date)))) +
-  facet_wrap(~year) + #labeller = function(labs) {label_value(labs, multi_line = FALSE)}
-  scale_fill_manual(values = c('#fdcc8a','#fc8d59','#d7301f','black'))
-
-  test <- merge(alltrans[alltrans$speciestype=='numeric' & alltrans$poor=='no',], 
-                data.frame(Plant=want))
-  test$Plant <- as.character(test$Plant)
-  
-pwant <- allplants[allplants$survey=='csm' & allplants$speciestype== 'numeric'& allplants$poor == 'no' &
-                     allplants$Plant %in% want,]
-
-pwant2 <- allplants[allplants$survey=='csm' & allplants$speciestype== 'binary'& allplants$poor == 'no',]
-pwant2 <- unique(pwant2['date','transect','location','point'])
-
-pwant3 <- allplants[allplants$survey=='csm' & allplants$poor == 'no' &
-                      allplants$Plant %in% want,]
-## sep and june very similar, can take sep with the same logic as aug from other years - more chance
-##    of plant development and most surveys in august
 
 ggplot(pwant, aes(x=long,y=lat)) +
     papertheme +
   geom_contour(data=bath, aes(z=z)) + 
   geom_path(data=peri, aes(group=group),color="black") +
     geom_point(aes(fill=factor(abundance)), shape=21, color='black',size=2, alpha=.7) +
-     facet_wrap(Plant~datefac, labeller = function(labs) {label_value(labs, multi_line = FALSE)},
+     facet_wrap(fullname~datefac, labeller = function(labs) {label_value(labs, multi_line = FALSE)},
                ncol=8) + 
     scale_fill_manual(values = c('#fdcc8a','#fc8d59','#d7301f','black')) +
-  scale_color_manual(values=c('transparent','black'))
-
-ggplot(pwant2, aes(x=long,y=lat)) +
-  papertheme +
-  geom_contour(data=bath, aes(z=z)) + 
-  geom_path(data=peri, aes(group=group),color="black") +
-  geom_point(aes(fill=factor(biomass)), shape=21, color='black',size=2, alpha=.7) +
-  facet_wrap(~datefac) + 
-  scale_fill_manual(values = c('#fdcc8a','#fc8d59','#d7301f','black')) +
   scale_color_manual(values=c('transparent','black'))
 
 ggplot(pwant3, aes(x=long,y=lat)) +
@@ -85,100 +70,99 @@ ggplot(pwant3, aes(x=long,y=lat)) +
   scale_fill_manual(values = c('transparent','#d7301f')) 
 
 ## =============================================================================================
-## summarise aggregate groups to highest abundance possible per point; 2019 and numeric csm
+## summarise aggregate species groups to highest abundance possible per point; 2019 and numeric csm
 ## =============================================================================================
-groups <- ddply(plants, .(point,Plant), summarise, totcover=sum(plantcover),
-                lat=lat[1],long=long[1], date=as.factor(date[1]), depth=depth[1])
-#ogroups <- ddply(oplants, .(date,transect,section,Plant), summarise, totcover=max(abundance),
-#                 lat=lat[1],long=long[1], depth=depth[1])
+groups <- ddply(allplants[which(allplants$survey=='200pt'),], .(point,Plant), summarise, 
+                totcover=sum(plantcover, na.rm = T),
+                lat=lat[1],long=long[1], year=year[1], depth=depth[1])
+
 ogroups <- ddply(allplants[allplants$speciestype=='numeric' & allplants$survey=='csm',], 
-                 .(datefac,transect,location,point,Plant), summarise, totcover=max(abundance),
+                 .(id,Plant), summarise, totcover=max(abundance), year=year[1],
                  lat=lat[1],long=long[1], depth=depth[1])
+
+bgroups <- ddply(allplants[allplants$survey=='csm',], 
+                 .(id,Plant), summarise, totcover=max(abundance), year=year[1],
+                 lat=lat[1],long=long[1], depth=depth[1])
+bgroups <- rbind.fill(groups, bgroups)
+bgroups$totcover[bgroups$totcover > 0] <- 1
 
 groups <- rbind.fill(groups,ogroups)
 
 ## choose which to show
-no <- c('Callitriche','Epiphyte','Zannichellia','Utricularia')
-df <- groups[-which(groups$Plant %in% no),]
+plotdf <- groups[groups$Plant %in% want,]
 
-ggplot(df, aes(x=long,y=lat)) +
+# plot of total cover of Plant groupings though numeric surveys
+ggplot(plotdf, aes(x=long,y=lat)) +
   papertheme +
-  geom_path(data=peri, aes(group=group),color="black") +
-  geom_point(data=df[is.na(df$transect),],aes(fill=totcover), 
+  geom_path(data=peri, aes(group=group),color="black", size=0.5) +
+  geom_point(data=plotdf[is.na(plotdf$id),],aes(fill=totcover), 
              shape=21, color='black', alpha=0.7) +
-  geom_point(data=df[!is.na(df$transect),],aes(col=factor(totcover)), 
-             shape=2) +
+  geom_point(data=plotdf[!is.na(plotdf$id),],aes(col=factor(totcover))) +
   geom_contour(data=bath, aes(z=z), color='black') + 
-  geom_line(data=trans, aes(x=long, y=lat,group=interaction(transect, location))) +
-  facet_wrap(~Plant, ncol=5) +
-  scale_fill_distiller(palette = 'Greens', direction=1) #+
-  #scale_fill_manual(values = c('#fdcc8a','#fc8d59','#d7301f'))
+  facet_wrap(Plant ~ year, ncol=6,labeller = function(labs) {label_value(labs, multi_line = FALSE)} ) +
+  scale_fill_distiller(palette = 'Greens', direction=1) +
+  scale_color_manual(values = c('black','#fdcc8a','#fc8d59','#d7301f'))
 
-df <- ogroups
-df$totcover[is.na(df$totcover)] <- 0
-df <- df[-which(df$Plant %in% no),]
-
+df <- ogroups[ogroups$Plant %in% want,]
+ # slightly different version of same thing with just csm surveys
 ggplot(df, aes(x=long,y=lat)) +
   papertheme +
   geom_path(data=peri, aes(group=group),color="black") +
   geom_point(aes(size=factor(totcover), color=Plant, shape=totcover==0), alpha=0.5) +
   geom_contour(data=bath, aes(z=z), color='black') + 
   #geom_line(data=alltrans, aes(x=long, y=lat,group=interaction(transect, location))) +
-  facet_wrap(Plant~datefac,  labeller = function(labs) {label_value(labs, multi_line = FALSE)}) #+
+  facet_wrap(Plant~year,  labeller = function(labs) {label_value(labs, multi_line = FALSE)}) #+
   #scale_color_manual(values=c('#a6cee3','#33a02c','#b2df8a','#ff7f00','#fdbf6f',
-                              '#1f78b4','#fb9a99','#e31a1c','#cab2d6','#6a3d9a'))
+                       #       '#1f78b4','#fb9a99','#e31a1c','#cab2d6','#6a3d9a'))
 
+# occurrence plot that can therefore show all surveys we have data for
+df <- bgroups[bgroups$Plant %in% want,]
 ggplot(df, aes(x=long,y=lat)) +
   papertheme +
   geom_path(data=peri, aes(group=group),color="black") +
-  geom_point(aes(size=factor(totcover), color=depth, shape=totcover==0), alpha=0.5) +
+  geom_point(aes(color=factor(totcover)), alpha=0.5) +
   geom_contour(data=bath, aes(z=z), color='black') + 
-  geom_line(data=trans, aes(x=Long, y=Lat,group=interaction(transect, location))) +
-  facet_wrap(~date, ncol=2) +
-  scale_color_viridis() #+
-  #scale_color_manual(values=c('#a6cee3','#33a02c','#b2df8a','#ff7f00','#fdbf6f',
-                            #  '#1f78b4','#fb9a99','#e31a1c','#cab2d6','#6a3d9a'))
+  facet_wrap(Plant~year,  labeller = function(labs) {label_value(labs, multi_line = FALSE)})
 
 ## =============================================================================================
-## higher-summary figures of plant cover 2019 and numeric abundance
+## higher-summary maps of plant cover 2019 and numeric abundance
 ## =============================================================================================
-## summarise plantcover over all substrates and depths
-malsum <- ddply(plants, .(point), summarise, plantcover=sum(plantcover, na.rm=T), 
-                substrate = substrate[1],
-                long=long[1], lat=lat[1], depth=depth[1], year=format(date, '%Y')[1],
-                height=mean(plantheight, na.rm = T))
+# create continuous for substrate
+subcodes <- data.frame(substrate = unique(allplants$substrate[allplants$survey=='200pt']))
+subcodes$GrainSize <- c(9,2,8,1,10,5,7,10,3,6,4)
+subcodes$survey <- '200pt'
 
-subcodes <- data.frame(substrate = unique(malsum$substrate))
-subcodes$GrainSize <- c(9,8,4,7,2,10,5,3,1,6,10)
-malsum <- merge(malsum, subcodes)
+subcodes <- rbind(subcodes, 
+                  data.frame(substrate=unique(allplants$substrate[allplants$survey=='csm']),
+                             GrainSize=c(3,2,6,1,5,NA,4,7,-99), # roots gets -99
+                             survey='csm'))
 
-omalsum <- ddply(allplants[allplants$survey=='csm' & allplants$poor=='no',], 
-                 .(datefac,transect, location, point), summarise, plantcover=biomass[1], 
-                substrate = substrate[1], year=year[1],
-                long=long[1], lat=lat[1], depth=depth[1])# not really a summarise operation but does the job
+subplants <- merge(subplants, subcodes)
+subplants$biomass_scaled <- subplants$biomass
+subplants$biomass_scaled[subplants$survey =='csm'] <- subplants$biomass_scaled[subplants$survey =='csm'] * 30
 
-osubcodes <- data.frame(substrate = unique(omalsum$substrate))
-osubcodes$GrainSize <- c(3,2,6,5,NA,7,4,1,-99)
-omalsum <- merge(omalsum, osubcodes)
+# create summary for 2019 plant height
+malsum <- ddply(allplants[allplants$survey=='200pt',], .(point), summarise, 
+                   height=mean(plantheight, na.rm = T))
 
+malsum <- merge(malsum, 
+                   data.frame(unique(allplants[allplants$survey=='200pt',
+                                               c('datefac','point',
+                                                 "date","depth" ,"substrate",
+                                                 'long','lat','year')])))
+subcodes$substrate <- as.character(subcodes$substrate)
+malsum <- merge(malsum, subcodes[subcodes$survey=='200pt',])
+
+## biomass over all substrates over time
 ## plant cover vs grain size of sediment
-ggplot(malsum) +
+ggplot(subplants[-which(subplants$GrainSize<0),]) +
   papertheme +
   geom_path(data=peri, aes(long,lat,group=group) ,color="black") +
-  geom_point(aes(x=long, y=lat, size=GrainSize, color=plantcover)) +
-  scale_color_viridis() +
-  geom_contour(data=bath, inherit.aes = F, aes(x=long, y=lat, z=z)) +
-  coord_equal()
-
-ggplot(omalsum[-which(omalsum$GrainSize<0),]) + #ignore roots
-  papertheme +
-  geom_path(data=peri, aes(long,lat,group=group) ,color="black") +
-  geom_point(aes(x=long, y=lat, size=GrainSize, fill=factor(plantcover)), shape=21, col='black') +
-  #scale_color_viridis() +
-  scale_fill_manual(values=c('#ffffcc','#c2e699','#78c679','#238443')) +
+  geom_point(aes(x=long, y=lat, fill=biomass_scaled), alpha=0.5, shape=21, color='black', size=2) +
+  scale_fill_viridis(direction = -1) +
   geom_contour(data=bath, inherit.aes = F, aes(x=long, y=lat, z=z)) +
   coord_equal() +
-  facet_wrap(~datefac)
+  facet_wrap(~year)  #labeller = function(labs) {label_value(labs, multi_line = FALSE)}
 
 ## plant height vs sediment
 ggplot(malsum) +
@@ -189,81 +173,78 @@ ggplot(malsum) +
   geom_contour(data=bath, inherit.aes = F, aes(x=long, y=lat, z=z)) +
   coord_equal()
 
-## interpolate plant height for geom_contour which likes regular intervals
-fld <- with(malsum[complete.cases(malsum[,c('long','lat','height')]),], 
-            interp(x = long, y = lat, z = height))
-
-df <- melt(fld$z, na.rm = TRUE)
-names(df) <- c("x", "y", "z")
-df$z[df$z>100] <- 100
-
-df$long <- fld$x[df$x]
-df$lat <- fld$y[df$y]
-
 ggplot(malsum) +
   papertheme +
   geom_path(data=peri, aes(long,lat,group=group) ,color="black") +
-  geom_tile(data=df, aes(x=long, y=lat, fill=z)) +
-  scale_fill_gradientn(colours = c("#7b3294","white","#008837"), 
-                                   values = rescale(c(0,20,100)),
-                                   guide = "colorbar", limits=c(0,100)) +
-  #geom_point(aes(x=long, y=lat, fill=height), shape=21, color='black', size=2.5) +
+  geom_point(aes(x=long, y=lat, fill=height, size=GrainSize), color='black', shape=21, alpha=0.7) +
+  scale_fill_viridis(direction = -1) +
   geom_contour(data=bath, inherit.aes = F, aes(x=long, y=lat, z=z)) +
   coord_equal()
 
-## plant cover vs depth on silt: recode and merge to put on same plot
-distro <- malsum[grep('silt', malsum$substrate),c('plantcover','depth','year')]
+## =============================================================================================
+## higher-summary maps of plant cover 2019 and numeric abundance
+## =============================================================================================
+## plant cover vs depth excluding bouldery substrate
+## FIXME: this isn't tidy now since renamed data frames etc. so check all data right
+##    also make this a function so that it doesn't take so many lines
+distro <- subplants[which(subplants$GrainSize<9 & subplants$survey=='200pt'),]
 
-distro <- rbind.fill(distro, omalsum[grep('SI', omalsum$substrate),c('plantcover','depth','year')])
-distro$plantcover[!distro$year=='2019'] <- distro$plantcover[!distro$year=='2019'] * 30
+distro <- rbind(distro, data.frame(subplants[which(subplants$GrainSize<6 & subplants$GrainSize != -99 & 
+                                           subplants$survey=='csm'),])) # NA are the > 75
 
-ggplot(distro,aes(x=depth, y=plantcover/100, group=year, col=year, fill=year)) +
+## FIXME: what was up with June survey 2009, those transects migrated to August are spooking.
+## long ice cover delayed macrophyte development?
+##    totally change the depth distribution
+ggplot(distro[-which(distro$year=='2009' & distro$transect >2),],aes(x=depth, y=biomass_scaled/100, group=year, col=year, fill=year)) +
   papertheme +
   geom_point(alpha=0.5, shape=21, col='black') +
   stat_smooth(method = 'gam',method.args = list(family = "binomial"),formula = y ~ s(x, bs = "cs", k=4), fill='grey70') +
-  ylab('Plant cover on silt (%)') + xlab('Depth (cm)') +
+  ylab('Plant cover ex cobbles, boulders (%)') + xlab('Depth (cm)') +
   scale_color_manual(values=c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
   scale_fill_manual(values=c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e'))
   #scale_color_viridis()
 
 ## chara depth distribution (including nitella/chara uncertainty)
-chara <- ddply(plants[plants$Plant=='Chara',], .(point), summarise, plantcover=sum(plantcover, na.rm=T), 
+chara <- ddply(allplants[allplants$Plant=='Chara' & allplants$survey=='200pt',], .(point), 
+               summarise, plantcover=sum(plantcover, na.rm=T), 
                 substrate = substrate[1],
                 long=long[1], lat=lat[1], depth=depth[1], Plant='Chara',
                 height=mean(plantheight), year=format(date, '%Y')[1])
-chara2 <- ddply(plants[!plants$point %in% chara$point,], .(point), summarise, plantcover=0, 
+chara2 <- ddply(allplants[!allplants$point %in% chara$point & allplants$survey=='200pt',], .(point), 
+                summarise, plantcover=0, 
                substrate = substrate[1],
                long=long[1], lat=lat[1], depth=depth[1], Plant='Chara',
                height=0, year=format(date, '%Y')[1])
 
-subplants <- allplants[allplants$survey=='csm' & allplants$poor=='no' &
-                         allplants$speciestype=='numeric',]
-subplants2 <- allplants[allplants$survey=='csm' & allplants$poor=='no',]
+numplants <- allplants[allplants$survey=='csm' & allplants$speciestype=='numeric',]
+numbiplants2 <- allplants[allplants$survey=='csm',]
 
-ochara <- ddply(subplants[subplants$Plant=='Chara',], .(id), summarise, 
+ochara <- ddply(numplants[numplants$Plant=='Chara',], .(id), summarise, 
                 plantcover=max(abundance, na.rm=T), 
                substrate = substrate[1],
                long=long[1], lat=lat[1], depth=depth[1], Plant='Chara', year=year[1])
 
-ochara2 <- ddply(subplants[!subplants$id %in% ochara$id,], .(id), summarise, 
+ochara2 <- ddply(numplants[!numplants$id %in% ochara$id,], .(id), summarise, 
                 plantcover=0, 
                 substrate = substrate[1],
                 long=long[1], lat=lat[1], depth=depth[1], Plant='Chara', year=year[1])
 
-nit<- ddply(plants[plants$Plant=='Nitella',], .(point), summarise, plantcover=sum(plantcover, na.rm=T), 
+nit<- ddply(allplants[allplants$Plant=='Nitella' & allplants$survey=='200pt',], .(point), 
+            summarise, plantcover=sum(plantcover, na.rm=T), 
                substrate = substrate[1],
                long=long[1], lat=lat[1], depth=depth[1], Plant='Nitella',
                height=mean(plantheight), year=format(date, '%Y')[1])
-nit2<- ddply(plants[!plants$point %in% nit$point,], .(point), summarise, plantcover=0, 
+nit2<- ddply(allplants[!allplants$point %in% nit$point & allplants$survey=='200pt',], .(point), 
+             summarise, plantcover=0, 
             substrate = substrate[1],
             long=long[1], lat=lat[1], depth=depth[1], Plant='Nitella',
             height=0, year=format(date, '%Y')[1])
 
-onit <- ddply(subplants[subplants$Plant=='Nitella',], .(id), summarise, 
+onit <- ddply(numplants[numplants$Plant=='Nitella',], .(id), summarise, 
                 plantcover=max(abundance, na.rm=T), 
                 substrate = substrate[1],
                 long=long[1], lat=lat[1], depth=depth[1], Plant='Nitella', year=year[1])
-onit2 <- ddply(subplants[!subplants$id %in% onit$id,], .(id), summarise, 
+onit2 <- ddply(numplants[!numplants$id %in% onit$id,], .(id), summarise, 
               plantcover=0, 
               substrate = substrate[1],
               long=long[1], lat=lat[1], depth=depth[1], Plant='Nitella', year=year[1])
@@ -272,10 +253,10 @@ onit2 <- ddply(subplants[!subplants$id %in% onit$id,], .(id), summarise,
 keys <- rbind.fill(chara, chara2,ochara,ochara2, nit,nit2, onit,onit2)
 keys$plantcover[!keys$year=='2019'] <- keys$plantcover[!keys$year=='2019'] * 30
 
-keys$substrate[keys$substrat=='SI'] <- 'silt' 
-keys <- keys[grep('silt',keys$substrate),]
+#keys$substrate[keys$substrat=='SI'] <- 'silt' 
+#keys <- keys[grep('silt',keys$substrate),]
 
-charadist <-  # !!! key figure for paper see also https://stats.stackexchange.com/questions/233366/how-to-fit-a-mixed-model-with-response-variable-between-0-and-1
+#charadist <-  # !!! key figure for paper see also https://stats.stackexchange.com/questions/233366/how-to-fit-a-mixed-model-with-response-variable-between-0-and-1
   ggplot(keys,aes(x=depth, y=plantcover/100, group=year, col=year, fill=year)) +
   papertheme +
   geom_point(alpha=0.5, col='black', shape=21) +
