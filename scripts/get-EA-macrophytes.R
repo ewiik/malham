@@ -186,10 +186,10 @@ scoords <- scoords[,-which(names(scoords) =='basesection')]
 
 alldat <- merge(alldat, bcoords)
 alldats <- merge(alldats, scoords)
-alldats$Depth <- 0
-alldats$Depth[grep('b', alldats$Depth)] <- 25
-alldats$Depth[grep('c', alldats$Depth)] <- 50
-alldats$Depth[grep('d', alldats$Depth)] <- 75
+alldats$Depth <- 25
+alldats$Depth[grep('b', alldats$Depth)] <- 50
+alldats$Depth[grep('c', alldats$Depth)] <- 75
+alldats$Depth[grep('d', alldats$Depth)] <- 80
 
 alldat <- rbind.fill(alldat, alldats)
 
