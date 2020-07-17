@@ -15,7 +15,11 @@ library(dplyr)
 papertheme <- theme_bw(base_size=12, base_family = 'ArialMT') +
   theme(legend.position='top')
 
-mdb <- mdb.get("../dat-orig/EA/sca_database_v2.2_2007_2019_Malham_data.mdb")
+#mdb <- mdb.get("../dat-orig/EA/sca_database_v2.2_2007_2019_Malham_data.mdb") # only for linux
+db <- odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};
+                        DBQ=../dat-orig/EA/sca_database_v2.2_2007_2019_Malham_data.mdb")
+data <- as_tibble(sqlFetch (db , "LHS_Survey", rownames=TRUE))
+
 fv <- read.csv("../dat-orig/EA/2004-2004surveys-longformat.csv")
 fvcoords <- read.csv("../dat-orig/EA/2004-2005-coordinates.csv")
 
