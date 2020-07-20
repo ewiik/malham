@@ -1,3 +1,6 @@
+## plots for plant survey data
+
+## get libraries
 library(ggplot2)
 library(metR) # contour labels
 library(ggsn)
@@ -5,9 +8,10 @@ library(reshape2)
 library(viridis)
 library(gridExtra)
 library(extrafont)
-loadfonts()
 library(plyr)
 library(mgcv)
+
+loadfonts()
 
 ## create a theme to save linespace in plots
 papertheme <- theme_bw(base_size=12, base_family = 'ArialMT') +
@@ -16,7 +20,7 @@ papertheme <- theme_bw(base_size=12, base_family = 'ArialMT') +
 ## read data
 alltrans <- readRDS('../dat-mod/all-plant-transects.rds')
 allplants <- readRDS('../dat-mod/all-plant-surveys.rds')
-subplants <- readRDS('../dat-mod/all-plant-surveys-nospecies.rds')
+noplants <- readRDS('../dat-mod/all-plant-surveys-nospecies.rds') # the data just with depth biomass etc. ie no point duplication
 
 peri <- readRDS("../dat-mod/mal-plantsurvey-2019-perimeter.rds")
 bath <- readRDS("../dat-mod/mal-plantsurvey-2019-bathy.rds")
@@ -24,45 +28,45 @@ bath <- readRDS("../dat-mod/mal-plantsurvey-2019-bathy.rds")
 ## correct Fontinalis to moss in 2019
 allplants$Plant[allplants$Plant=='Fontinalis'] <- 'Moss'
 
+## =============================================================================
+## create subsets and other altered data  
+## ===============================================================================
+## for when we might want to look again at poor data
+poorplants <- allplants
+poornoplants <- noplants
+
+## remove poor data from main data sets
+allplants <- allplants[-which(allplants$poor=='yes'),]
+noplants <- noplants[-which(noplants$poor=='yes'),]
+
 # declare list of most interesting plant groups
 want <- c('Balls','Callitriche','Chara','Elodea','Characeae','Fontinalis','Nitella','No plants' ,
           'PotEut','PotLuc','Tolypella','Utricularia','Zannichellia','Moss')
 
-## create subsets  
-## ===============================================================================
-## for when we might want to remove poor data
-poorplants <- allplants
-poorsubplants <- subplants
-
-allplants <- allplants[-which(allplants$poor=='yes'),]
-subplants <- subplants[-which(subplants$poor=='yes'),]
-
-
 ## csm with and without species abundance
-pwant <- allplants[allplants$survey=='csm' & allplants$speciestype== 'numeric'& 
+csmnum <- allplants[allplants$survey=='csm' & allplants$speciestype== 'numeric'& 
                      allplants$Plant %in% want,]
-pwant2 <- allplants[allplants$survey=='csm' & allplants$Plant %in% want,]
+csmall <- allplants[allplants$survey=='csm' & allplants$Plant %in% want,]
 
 ## summarise aggregate species groups to highest abundance possible per point; 2019 and numeric csm
-groups <- ddply(allplants[which(allplants$survey=='200pt'),], .(point,Plant), summarise, 
+ptgroups <- ddply(allplants[which(allplants$survey=='200pt'),], .(point,Plant), summarise, 
                 totcover=sum(plantcover, na.rm = T),
-                lat=lat[1],long=long[1], year=year[1], depth=depth[1])
+                lat=lat[1],long=long[1], year=year[1], depth=depth[1]) # sum of cover for 2019 data
 
-ogroups <- ddply(allplants[allplants$speciestype=='numeric' & allplants$survey=='csm',], 
+numgroups <- ddply(allplants[allplants$speciestype=='numeric' & allplants$survey=='csm',], 
                  .(id,Plant), summarise, totcover=max(abundance), year=year[1],
-                 lat=lat[1],long=long[1], depth=depth[1])
+                 lat=lat[1],long=long[1], depth=depth[1]) # max of abundance here
 
-bgroups <- ddply(allplants[allplants$survey=='csm',], 
+bingroups <- ddply(allplants[allplants$survey=='csm',], 
                  .(id,Plant), summarise, totcover=max(abundance), year=year[1],
-                 lat=lat[1],long=long[1], depth=depth[1])
+                 lat=lat[1],long=long[1], depth=depth[1]) # max here too where >0 to be converted to 1
 
-bgroups <- rbind.fill(groups, bgroups)
-bgroups$totcoverbin <- 0
-bgroups$totcoverbin[bgroups$totcover > 0] <- 1 #all surveys
+bingroups <- rbind.fill(ptgroups, bingroups) # bring all surveys back together
+bingroups$totcover[bingroups$totcover > 0] <- 1 # convert all abundance >0 to 1 for binary
 
-groups <- rbind.fill(groups,ogroups) # only numeric surveys
+numgroups <- rbind.fill(ptgroups,numgroups) # only numeric surveys
 
-# create continuous value for substrate and insert into subplants
+# create continuous value for substrate and insert into noplants
 subcodes <- data.frame(substrate = unique(allplants$substrate[allplants$survey=='200pt']))
 subcodes$GrainSize <- c(9,2,8,1,10,5,7,10,3,6,4)
 subcodes$survey <- '200pt'
@@ -73,28 +77,93 @@ subcodes <- rbind(subcodes,
                              survey='csm'))
 
 
-subplants <- merge(subplants, subcodes)
-subplants$biomass_scaled <- subplants$biomass
-subplants$biomass_scaled[subplants$survey =='csm'] <- subplants$biomass_scaled[subplants$survey =='csm'] * 30
+noplants <- merge(noplants, subcodes)
 
-## create summary for 2019 plant height
-malsum <- ddply(allplants[allplants$survey=='200pt',], .(point), summarise, 
+## create scaled biomass for semi-quantitative data
+noplants$biomass_scaled <- noplants$biomass
+noplants$biomass_scaled[noplants$survey =='csm'] <- noplants$biomass_scaled[noplants$survey =='csm'] * 30
+
+## create mean for 2019 plant height
+malheight <- ddply(allplants[allplants$survey=='200pt',], .(point), summarise, 
                 height=mean(plantheight, na.rm = T))
 
-malsum <- merge(malsum, 
+malheight <- merge(malheight, 
                 data.frame(unique(allplants[allplants$survey=='200pt',
                                             c('datefac','point',
                                               "date","depth" ,"substrate",
                                               'long','lat','year')])))
 subcodes$substrate <- as.character(subcodes$substrate)
-malsum <- merge(malsum, subcodes[subcodes$survey=='200pt',])
+malheight <- merge(malheight, subcodes[subcodes$survey=='200pt',])
 
-## plant cover vs depth excluding bouldery substrate
-ndistro <- subplants[which(subplants$GrainSize<9 & subplants$survey=='200pt'),]
-bdistro <- subplants[which(subplants$GrainSize<6 & subplants$GrainSize != -99 & 
-                             subplants$survey=='csm'),]
-distro <- rbind(ndistro, bdistro) 
+## exclude bouldery substrate for analyses that look at macrophyte cover over substrate fruitful for occupancy
+subspt <- noplants[which(noplants$GrainSize<9 & noplants$survey=='200pt'),] # retain finer substrates from points survey
+subscsm <- noplants[which(noplants$GrainSize<6 & noplants$GrainSize != -99 & # retain finer substrates from CSM surveys
+                             noplants$survey=='csm'),]
+subs <- rbind(subspt, subscsm) 
 
+## define key taxa
+plist <- list('Chara','Nitella','Elodea','Fontinalis')
+
+## exclude boulders from binary and numeric plant group data, multiply CSM datta by 30
+bingroupsCSMNoBoulders <- bingroups[!is.na(bingroups$id),]
+bingroupsPtsNoBoulders <- bingroups[is.na(bingroups$id),]
+
+bingroupsCSMNoBoulders <- bingroupsCSMNoBoulders[bingroupsCSMNoBoulders$id %in% subscsm$id,]
+bingroupsPtsNoBoulders <- bingroupsPtsNoBoulders[bingroupsPtsNoBoulders$point %in% subspt$point,]
+
+numgroupsCSMNoBoulders <- numgroups[!is.na(numgroups$id),]
+numgroupsPtsNoBoulders <- numgroups[is.na(numgroups$id),]
+
+numgroupsCSMNoBoulders <- numgroupsCSMNoBoulders[numgroupsCSMNoBoulders$id %in% subscsm$id,]
+numgroupsCSMNoBoulders$totcover <- numgroupsCSMNoBoulders$totcover * 30 # convert abundance to quant
+numgroupsPtsNoBoulders <- numgroupsPtsNoBoulders[numgroupsPtsNoBoulders$point %in% subspt$point,]
+
+## function to start creating our data frames by plant that preserve zero points
+## recall that bingroups and numgroups contain the "plant" = "No plants" so they have the zeroes already.
+dfunc <- function(pname, dframe) {
+  aggvar <- ifelse(is.na(dframe[1,'id']), 'point','id')
+  df <- subset(dframe, dframe$Plant==pname)
+  nodf <- subset(dframe, !dframe[,aggvar] %in% df[,aggvar]) #points without our plant
+  nodf$Plant <- pname
+  nodf$totcover <- 0
+  nodf <- nodf[-which(duplicated(nodf)),] # there may be many plants in points without our plant
+  # need all points, and indicator if or not plant we want
+  df <- rbind.fill(df, nodf)
+}
+chara <- dfunc('Chara', bingroupsPtsNoBoulders)
+ochara <- dfunc('Chara', bingroupsCSMNoBoulders)  
+
+nit<- dfunc('Nitella', bingroupsPtsNoBoulders)
+onit <- dfunc('Nitella', bingroupsCSMNoBoulders)
+
+elo <- dfunc('Elodea', bingroupsPtsNoBoulders)
+oelo <- dfunc('Elodea', bingroupsCSMNoBoulders)
+
+moss <- dfunc('Moss', bingroupsPtsNoBoulders)
+omoss <- dfunc('Moss', bingroupsCSMNoBoulders)
+
+charanum <- dfunc('Chara', numgroupsPtsNoBoulders)
+ocharanum <- dfunc('Chara', numgroupsCSMNoBoulders)  
+
+nitnum <- dfunc('Nitella', numgroupsPtsNoBoulders)
+onitnum <- dfunc('Nitella', numgroupsCSMNoBoulders)
+
+elonum <- dfunc('Elodea', numgroupsPtsNoBoulders)
+oelonum <- dfunc('Elodea', numgroupsCSMNoBoulders)
+
+mossnum <- dfunc('Moss', numgroupsPtsNoBoulders)
+omossnum <- dfunc('Moss', numgroupsCSMNoBoulders)
+
+keyplants <- rbind.fill(chara, ochara, nit, onit, elo, oelo, moss, omoss)
+keyplants$year <- as.numeric(keyplants$year)
+
+keyplantsnum <- rbind.fill(charanum, ocharanum, nitnum, onitnum, elonum, oelonum, mossnum, omossnum)
+keyplantsnum$totcover <- keyplantsnum$totcover/100
+keyplantsnum$year <- as.numeric(keyplantsnum$year)
+keyplantsnum$Plant <- factor(keyplantsnum$Plant)
+
+
+testgam <- gam(totcover ~ s(depth, by=Plant, k=5)+ Plant, family=binomial(),data=keyplantsnum[keyplantsnum$year==2009,] )
 
 ## =============================================================================================
 ## plot with survey points in 2019 and bathymetry; plus a 'mean transect' of CSM 
@@ -105,7 +174,7 @@ ggplot(alltrans[alltrans$year == 2009,], aes(x=long,y=lat)) +
   geom_path(data=peri, aes(group=group),color="black") +
   stat_contour(data=bath, aes(z=z/100), color='grey70')  + 
   geom_text_contour(data=bath, aes(z=z/100), stroke = 1, check_overlap = T) +
-  geom_point(data=subplants[subplants$year==2019,], aes(color=year)) +
+  geom_point(data=noplants[noplants$year==2019,], aes(color=year)) +
   geom_line(data=alltrans[alltrans$year==2009,],
             aes(group=interaction(factor(transect), location), color=year), size=1.5, alpha=0.7) +
   scale_color_manual('Survey', values=c('#a6611a','#018571'), labels=c('CSM','Points')) +
@@ -121,7 +190,7 @@ ggsave('../figs/plantsurveys-transects.jpg', samplingplot)
 
 ## raw distribution of survey points across depth
 depthplot <-
-  ggplot(subplants, aes(x=depth, group=year, col=year)) +
+  ggplot(noplants, aes(x=depth, group=year, col=year)) +
   geom_density(size=2) +
   scale_color_manual(values=c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
   #scale_fill_manual(values=c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e'))
@@ -144,7 +213,7 @@ ggsave('../figs/plant-surveypoints-depth.jpg', depthplot)
   scale_fill_viridis(option='viridis')
 
 
-ggplot(pwant, aes(x=long,y=lat)) +
+ggplot(csmnum, aes(x=long,y=lat)) +
     papertheme +
   geom_contour(data=bath, aes(z=z)) + 
   geom_path(data=peri, aes(group=group),color="black") +
@@ -154,7 +223,7 @@ ggplot(pwant, aes(x=long,y=lat)) +
     scale_fill_manual(values = c('#fdcc8a','#fc8d59','#d7301f','black')) +
   scale_color_manual(values=c('transparent','black'))
 
-ggplot(pwant2, aes(x=long,y=lat)) +
+ggplot(csmall, aes(x=long,y=lat)) +
   papertheme +
   geom_contour(data=bath, aes(z=z)) + 
   geom_path(data=peri, aes(group=group),color="black") +
@@ -203,7 +272,7 @@ plantmaps <-
 ggsave('../figs/plant-maps-time.jpg', plantmaps, width=18, units='cm')
 ggsave('../figs/plant-maps-time.pdf', plantmaps, width=28, units='cm')
 
-df <- ogroups[ogroups$Plant %in% want,]
+df <- numgroups[numgroups$Plant %in% want,]
  # slightly different version of same thing with just csm surveys
 ggplot(df, aes(x=long,y=lat)) +
   papertheme +
@@ -216,7 +285,7 @@ ggplot(df, aes(x=long,y=lat)) +
                        #       '#1f78b4','#fb9a99','#e31a1c','#cab2d6','#6a3d9a'))
 
 # occurrence plot that can therefore show all surveys we have data for
-df <- bgroups[bgroups$Plant %in% want,]
+df <- bingroups[bingroups$Plant %in% want,]
 ggplot(df, aes(x=long,y=lat)) +
   papertheme +
   geom_path(data=peri, aes(group=group),color="black") +
@@ -229,7 +298,7 @@ ggplot(df, aes(x=long,y=lat)) +
 ## =============================================================================================
 ## biomass over all substrates over time
 ## plant cover vs grain size of sediment
-ggplot(subplants[-which(subplants$GrainSize<0),]) +
+ggplot(noplants[-which(noplants$GrainSize<0),]) +
   papertheme +
   geom_path(data=peri, aes(long,lat,group=group) ,color="black") +
   geom_point(aes(x=long, y=lat, fill=biomass_scaled), alpha=0.5, shape=21, color='black', size=2) +
@@ -239,7 +308,7 @@ ggplot(subplants[-which(subplants$GrainSize<0),]) +
   facet_wrap(~year)  #labeller = function(labs) {label_value(labs, multi_line = FALSE)}
 
 ## plant height vs sediment; 2019
-ggplot(malsum) +
+ggplot(malheight) +
   papertheme +
   geom_path(data=peri, aes(long,lat,group=group) ,color="black") +
   geom_point(aes(x=long, y=lat, color=height > 20, size=GrainSize)) +
@@ -247,7 +316,7 @@ ggplot(malsum) +
   geom_contour(data=bath, inherit.aes = F, aes(x=long, y=lat, z=z)) +
   coord_equal()
 
-heightplot <- ggplot(malsum) +
+heightplot <- ggplot(malheight) +
   papertheme +
   geom_path(data=peri, aes(long,lat,group=group) ,color="black") +
   geom_point(aes(x=long, y=lat, fill=height, size=GrainSize), color='black', shape=21, alpha=0.9) +
@@ -272,7 +341,7 @@ ggsave('../figs/plant-height-2019.jpg', heightplot)
 ## FIXME: what was up with June survey 2009, those transects migrated to August are spooking.
 ## long ice cover delayed macrophyte development?
 ##    totally change the depth distribution
-ggplot(distro[-which(distro$year=='2009' & distro$transect >2),],
+ggplot(subs[-which(subs$year=='2009' & subs$transect >2),],
        aes(x=depth, y=biomass_scaled/100, group=year, col=year, fill=year)) +
   papertheme +
   geom_point(alpha=0.5, shape=21, col='black') +
@@ -285,7 +354,7 @@ ggplot(distro[-which(distro$year=='2009' & distro$transect >2),],
 
 ## biomass of plants in areas where we expect them (ie remove bouldery points)
 abplot <- 
-ggplot(distro, aes(x=year, group=biomass_scaled, fill=biomass_scaled)) +
+ggplot(subs, aes(x=year, group=biomass_scaled, fill=biomass_scaled)) +
   papertheme +
   geom_bar(position = 'fill') +
   scale_fill_distiller('Scaled plant cover',palette = 'Greens', direction = 1) +
@@ -293,7 +362,7 @@ ggplot(distro, aes(x=year, group=biomass_scaled, fill=biomass_scaled)) +
 
 ## occurrence of plants in areas where we expect them (ie remove bouldery points)
 ocplot <- 
-ggplot(distro, aes(x=year, group=biomass_scaled >0, fill=biomass_scaled>0)) +
+ggplot(subs, aes(x=year, group=biomass_scaled >0, fill=biomass_scaled>0)) +
   papertheme +
   geom_bar(position = 'fill') +
   scale_fill_manual('Plant occurrence',values=c('#a6611a','#018571'), labels=c(0,1)) +
@@ -304,57 +373,16 @@ plantpts <- grid.arrange(abplot, ocplot, ncol=1)
 ggsave('../figs/plant-biomass.jpg',plantpts, height=7, width=7)
 
 # quick proportional test on whether significantly different
-ptable <- table(distro$year, distro$biomass>0)
+ptable <- table(subs$year, subs$biomass>0)
 summary(prop.test(x = ptable))
 
-summary(lm(biomass >0 ~ factor(year), data=distro))
+summary(lm(biomass >0 ~ factor(year), data=subs))
 
-## plot distribution likelihood for key taxa
-plist <- list('Chara','Nitella','Elodea','Fontinalis')
-
-## make data frames that exclude boulders and are separate for each data type
-cplants <- bgroups[!is.na(bgroups$id),]
-nplants <- bgroups[is.na(bgroups$id),]
-
-cplants <- cplants[cplants$id %in% bdistro$id,]
-nplants <- nplants[nplants$point %in% ndistro$point,]
-
-## function to start creating our data frames by plant
-dfunc <- function(pname, dframe) {
-  aggvar <- ifelse(is.na(dframe[1,'id']), 'point','id')
-  df <- subset(dframe, dframe$Plant==pname)
-  nodf <- subset(dframe, !dframe[,aggvar] %in% df[,aggvar]) #points without our plant
-  nodf$Plant <- pname
-  nodf$totcover <- 0
-  nodf$totcover <- 0
-  nodf <- nodf[-which(duplicated(nodf)),] # there may be many plants in points without our plant
-  # need all points, and indicator if or not plant we want
-  df <- rbind.fill(df, nodf)
-}
-chara <- dfunc('Chara', nplants)
-ochara <- dfunc('Chara', cplants)  
-
-nit<- dfunc('Nitella', nplants)
-onit <- dfunc('Nitella', cplants)
-
-elo <- dfunc('Elodea', nplants)
-oelo <- dfunc('Elodea', cplants)
-
-moss <- dfunc('Moss', nplants)
-omoss <- dfunc('Moss', cplants)
-
-keys <- rbind.fill(chara, ochara, nit, onit, elo, oelo, moss, omoss)
-
-keys$totcover[keys$year %in% c('2009','2010','2018')] <- 
-  keys$totcover[keys$year %in% c('2009','2010','2018')] * 30
-keys$totcover[keys$year %in% c('2004','2005')] <- 
-  keys$totcover[keys$year %in% c('2004','2005')] * 100
-
-keys$totcoverbin[keys$totcover > 0] <- 1
-keys$totcoverbin[keys$totcover == 0] <- 0
-
+## =========================================================================================
+## plot the occurrences and abundances of key aggregate groups for the paper
+## =========================================================================================
 #abdepth <-  # !!! key figure for paper see also https://stats.stackexchange.com/questions/233366/how-to-fit-a-mixed-model-with-response-variable-between-0-and-1
-  ggplot(keys[!keys$year %in% c(2004,2005),],aes(x=depth, y=totcover/100, group=year, col=year, fill=year)) +
+  ggplot(keyplantsnum,aes(x=depth, y=totcover, group=factor(year), col=factor(year), fill=factor(year))) +
   papertheme +
   geom_point(alpha=0.5, col='black', shape=21) +
   stat_smooth(method = 'gam',method.args = list(family = "binomial"),
@@ -364,26 +392,48 @@ keys$totcoverbin[keys$totcover == 0] <- 0
     scale_fill_manual(values=c('#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
   ylab('Macrophyte cover proportion') + xlab('Depth (cm)') #+ ylim(c(0,100))
 
-  ## FIXME: check why gams slightly different now, something in code didn't run. there was somthing cdistro wasn't found and had to replace with bdistro
-keymelt <- melt(keys, id.vars = c('point','Plant','year','depth'), measure.vars = c('totcover','totcoverbin'))  
-keymelt$value[keymelt$variable=='totcover'] <- keymelt$value[keymelt$variable=='totcover']/100 
-keymelt$value[keymelt$variable=='totcover' & keymelt$year %in% c(2004, 2005)] <- NA
-keymelt$variable <- factor(keymelt$variable, labels=c('Abundance','Occurrence'))  
-keymelt$Plant <- factor(keymelt$Plant, levels = c('Chara','Nitella','Elodea','Moss'))
+keymeltnum <- melt(keyplantsnum, id.vars = c('Plant','year','depth'), measure.vars = c('totcover'))  
+#keymelt$variable <- factor(keymelt$variable, labels=c('Abundance','Occurrence'))  
+keymeltnum$Plant <- factor(keymeltnum$Plant, levels = c('Chara','Nitella','Elodea','Moss'))
 
-kgam <- gam(value ~ s(depth, by=c(Plant, year, variable)), family='binomial', data=keymelt )  
-ggplot(keymelt,aes(x=depth, y=value, group=interaction(Plant, year, variable), col=Plant, fill=Plant)) +
+keymeltbin <- melt(keyplants, id.vars = c('Plant','year','depth'), measure.vars = c('totcover'))  
+#keymelt$variable <- factor(keymelt$variable, labels=c('Abundance','Occurrence'))  
+keymeltbin$Plant <- factor(keymeltbin$Plant, levels = c('Chara','Nitella','Elodea','Moss'))
+
+## FIXME: try not restricting substrate and see if old plots get recreated
+numplot <- 
+  ggplot(keymeltnum,aes(x=depth, y=value, group=interaction(Plant, factor(year)), col=factor(year), fill=factor(year))) +
     papertheme +
     geom_point(alpha=0.5, col='black', shape=21) +
     stat_smooth(method = 'gam',method.args = list(family = "binomial"),
-                formula = y ~ s(x, bs = "cs",k=4), fullrange=F, se=F) +
-    facet_grid(year~variable) +
-    scale_color_manual(values=c('#1f78b4','#a6cee3','#b2df8a','#33a02c')) +
-    scale_fill_manual(values=c('#1f78b4','#a6cee3','#b2df8a','#33a02c')) +
-    ylab('Macrophyte cover proportion') + xlab('Depth (cm)') #+ ylim(c(0,100))
+                formula = y ~ s(x, bs = "cs"), fullrange=F, se=F) +
+    facet_grid(Plant~.) +
+    scale_color_manual("Year", values=c('#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
+    scale_fill_manual("Year", values=c('#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
+    ylab('Macrophyte cover proportion') + xlab('Depth (cm)')  +
+guides(fill=guide_legend(nrow=2,byrow=TRUE), color=guide_legend(nrow=2,byrow=TRUE))
+
+binplot <-
+ggplot(keymeltbin,aes(x=depth, y=value, group=interaction(Plant, factor(year)), col=factor(year), fill=factor(year))) +
+  papertheme +
+  geom_point(alpha=0.5, col='black', shape=21) +
+  stat_smooth(method = 'gam',method.args = list(family = "binomial"),
+              formula = y ~ s(x, bs = "cs", k=4), fullrange=F, se=F) +
+  facet_grid(Plant~.) +
+  scale_color_manual("Year",values=c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
+  scale_fill_manual("Year",values=c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
+  #scale_fill_viridis()+
+  #scale_color_viridis() +
+  ylab('Macrophyte cover proportion') + xlab('Depth (cm)') +
+  guides(fill=guide_legend(nrow=2,byrow=TRUE), color=guide_legend(nrow=2,byrow=TRUE))
+
+
+keyplot <- grid.arrange(binplot, numplot, ncol=2)
+
+ggsave("../figs/plantdepths-allplots.jpg", height=24,width=17, units='cm')  
   
-  occdepth <-
-  ggplot(keys,aes(x=depth, y=totcoverbin, group=year, col=year, fill=year)) +
+occdepth <-
+  ggplot(keyplants,aes(x=depth, y=totcoverbin, group=year, col=year, fill=year)) +
     papertheme +
     geom_point(alpha=0.5, col='black', shape=21) +
     stat_smooth(method = 'gam',method.args = list(family = "binomial"),
@@ -404,7 +454,7 @@ ggsave('../figs/species-depths.jpg', depths, width=8, height=11)
 ## in 2019 survey, we had whole area where we recorded 'gunk'. no filalg there so highlight
 ##    these points. Also two points with NA at upper end of depth 138,143 so will remove those
 
-algo <- subplants[subplants$depth < 150 & subplants$survey=='200pt',
+algo <- noplants[noplants$depth < 150 & noplants$survey=='200pt',
                   c('date','transect','location','depth','filalg',
                                      'long','lat','substrate', 'year', 'id','gunk')]
 algo <- algo[-which(is.na(algo$filalg)),]
