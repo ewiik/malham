@@ -96,15 +96,13 @@ subcodes$substrate <- as.character(subcodes$substrate)
 malheight <- merge(malheight, subcodes[subcodes$survey=='200pt',])
 
 ## exclude bouldery substrate for analyses that look at macrophyte cover over substrate fruitful for occupancy
+## this excludes 'stony,boulder'; 'stony,boulder,gravel' from 2019, and boulders from csm (not cobbles)
 subspt <- noplants[which(noplants$GrainSize<9 & noplants$survey=='200pt'),] # retain finer substrates from points survey
-subscsm <- noplants[which(noplants$GrainSize<6 & noplants$GrainSize != -99 & # retain finer substrates from CSM surveys
+subscsm <- noplants[which(noplants$GrainSize<=6 & noplants$GrainSize != -99 & # retain finer substrates from CSM surveys
                              noplants$survey=='csm'),]
 subs <- rbind(subspt, subscsm) 
 
-## define key taxa
-plist <- list('Chara','Nitella','Elodea','Fontinalis')
-
-## exclude boulders from binary and numeric plant group data, multiply CSM datta by 30
+## exclude boulders from binary and numeric plant group data, multiply CSM data by 30
 bingroupsCSMNoBoulders <- bingroups[!is.na(bingroups$id),]
 bingroupsPtsNoBoulders <- bingroups[is.na(bingroups$id),]
 
@@ -156,14 +154,13 @@ omossnum <- dfunc('Moss', numgroupsCSMNoBoulders)
 
 keyplants <- rbind.fill(chara, ochara, nit, onit, elo, oelo, moss, omoss)
 keyplants$year <- as.numeric(keyplants$year)
+keyplants$Plant <- factor(keyplants$Plant, levels = c('Chara','Nitella','Elodea','Moss'))
 
 keyplantsnum <- rbind.fill(charanum, ocharanum, nitnum, onitnum, elonum, oelonum, mossnum, omossnum)
 keyplantsnum$totcover <- keyplantsnum$totcover/100
 keyplantsnum$year <- as.numeric(keyplantsnum$year)
 keyplantsnum$Plant <- factor(keyplantsnum$Plant)
-
-
-testgam <- gam(totcover ~ s(depth, by=Plant, k=5)+ Plant, family=binomial(),data=keyplantsnum[keyplantsnum$year==2009,] )
+keyplantsnum$Plant <- factor(keyplantsnum$Plant, levels = c('Chara','Nitella','Elodea','Moss'))
 
 ## =============================================================================================
 ## plot with survey points in 2019 and bathymetry; plus a 'mean transect' of CSM 
@@ -381,71 +378,40 @@ summary(lm(biomass >0 ~ factor(year), data=subs))
 ## =========================================================================================
 ## plot the occurrences and abundances of key aggregate groups for the paper
 ## =========================================================================================
-#abdepth <-  # !!! key figure for paper see also https://stats.stackexchange.com/questions/233366/how-to-fit-a-mixed-model-with-response-variable-between-0-and-1
-  ggplot(keyplantsnum,aes(x=depth, y=totcover, group=factor(year), col=factor(year), fill=factor(year))) +
-  papertheme +
-  geom_point(alpha=0.5, col='black', shape=21) +
-  stat_smooth(method = 'gam',method.args = list(family = "binomial"),
-              formula = y ~ s(x, bs = "cs",k=4), fullrange=F, se=F) +
-  facet_wrap(~Plant) +
-    scale_color_manual(values=c('#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
-    scale_fill_manual(values=c('#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
-  ylab('Macrophyte cover proportion') + xlab('Depth (cm)') #+ ylim(c(0,100))
-
-keymeltnum <- melt(keyplantsnum, id.vars = c('Plant','year','depth'), measure.vars = c('totcover'))  
-#keymelt$variable <- factor(keymelt$variable, labels=c('Abundance','Occurrence'))  
-keymeltnum$Plant <- factor(keymeltnum$Plant, levels = c('Chara','Nitella','Elodea','Moss'))
-
-keymeltbin <- melt(keyplants, id.vars = c('Plant','year','depth'), measure.vars = c('totcover'))  
-#keymelt$variable <- factor(keymelt$variable, labels=c('Abundance','Occurrence'))  
-keymeltbin$Plant <- factor(keymeltbin$Plant, levels = c('Chara','Nitella','Elodea','Moss'))
-
-## FIXME: try not restricting substrate and see if old plots get recreated
+## see also https://stats.stackexchange.com/questions/233366/how-to-fit-a-mixed-model-with-response-variable-between-0-and-1
 numplot <- 
-  ggplot(keymeltnum,aes(x=depth, y=value, group=interaction(Plant, factor(year)), col=factor(year), fill=factor(year))) +
+  ggplot(keyplantsnum,aes(x=depth, y=totcover, group=interaction(Plant, factor(year)), col=factor(year), fill=factor(year))) +
     papertheme +
     geom_point(alpha=0.5, col='black', shape=21) +
     stat_smooth(method = 'gam',method.args = list(family = "binomial"),
-                formula = y ~ s(x, bs = "cs"), fullrange=F, se=F) +
+                formula = y ~ s(x, bs = "cs"), medthod.args=list(weights=100), fullrange=F, se=F) +
     facet_grid(Plant~.) +
     scale_color_manual("Year", values=c('#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
     scale_fill_manual("Year", values=c('#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
     ylab('Macrophyte cover proportion') + xlab('Depth (cm)')  +
-guides(fill=guide_legend(nrow=2,byrow=TRUE), color=guide_legend(nrow=2,byrow=TRUE))
+  guides(fill=guide_legend(nrow=2,byrow=F), color=guide_legend(nrow=2,byrow=F)) +
+  ggtitle("b") + theme(plot.title = element_text(hjust = -0.05, vjust=-8))
 
 binplot <-
-ggplot(keymeltbin,aes(x=depth, y=value, group=interaction(Plant, factor(year)), col=factor(year), fill=factor(year))) +
+ggplot(keyplants,aes(x=depth, y=totcover, group=interaction(Plant, factor(year)), col=factor(year), fill=factor(year))) +
   papertheme +
   geom_point(alpha=0.5, col='black', shape=21) +
   stat_smooth(method = 'gam',method.args = list(family = "binomial"),
-              formula = y ~ s(x, bs = "cs", k=4), fullrange=F, se=F) +
+              formula = y ~ s(x, bs = "cs"), fullrange=F, se=F) +
   facet_grid(Plant~.) +
   scale_color_manual("Year",values=c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
   scale_fill_manual("Year",values=c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
   #scale_fill_viridis()+
   #scale_color_viridis() +
-  ylab('Macrophyte cover proportion') + xlab('Depth (cm)') +
-  guides(fill=guide_legend(nrow=2,byrow=TRUE), color=guide_legend(nrow=2,byrow=TRUE))
-
+  ylab('Macrophyte occurrence probability') + xlab('Depth (cm)') +
+  guides(fill=guide_legend(nrow=2,byrow=F), color=guide_legend(nrow=2,byrow=F)) +
+  ggtitle("a") + theme(plot.title = element_text(hjust = -0.05, vjust=-8))
+# https://stackoverflow.com/questions/25401111/left-adjust-title-in-ggplot2-or-absolute-position-for-ggtitle
 
 keyplot <- grid.arrange(binplot, numplot, ncol=2)
 
-ggsave("../figs/plantdepths-allplots.jpg", height=24,width=17, units='cm')  
+ggsave("../figs/plantdepths-allplots.jpg", keyplot, height=24,width=20, units='cm')  
   
-occdepth <-
-  ggplot(keyplants,aes(x=depth, y=totcoverbin, group=year, col=year, fill=year)) +
-    papertheme +
-    geom_point(alpha=0.5, col='black', shape=21) +
-    stat_smooth(method = 'gam',method.args = list(family = "binomial"),
-                formula = y ~ s(x, bs = "cs",k=4), fullrange=F, se=F) +
-    facet_wrap(~Plant) +
-    scale_color_manual(values=c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
-    scale_fill_manual(values=c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e')) +
-    ylab('Macrophyte occurrence') + xlab('Depth (cm)') #+ ylim(c(0,100))
-  ## FIXME: make sure na depth 75 becomes 75 or 80
-
-depths <- grid.arrange(abdepth, occdepth, ncol=1)    
-ggsave('../figs/species-depths.jpg', depths, width=8, height=11)
 
 ## ======================================================================================
 ## 2019 fil alg cover
@@ -483,7 +449,7 @@ ggsave('../figs/filalg-abundance.jpg',shallows)
 ## percentage occurrence of chara aspera in survey?
 ## ==============================================================================
 asp <- allplants[which(allplants$depth < 150 ),]
-asp <- asp[-which(asp$substrate %in% c('BO','CO')),]
+asp <- asp[-which(asp$substrate %in% c('BO')),]
 asp <- asp[-which(asp$substrate=='boulder,stone'),]
 asp <- asp[-which(asp$substrate=='stony,boulder'),]
 
@@ -494,10 +460,11 @@ aspsum$pasp[aspsum$year=='2019'] <- aspsum$pasp200[aspsum$year=='2019']
 asplot <- 
 ggplot(aspsum, aes(x=year, y=pasp*100)) +
   papertheme +
-  geom_bar(stat = 'identity') +
-  ylab('% survey points with Chara aspera at < 150cm \n excluding boulder substrate') + xlab('Year')
+  geom_bar(stat = 'identity', fill='grey70') +
+  ylab('% survey points with Chara aspera at < 150cm \n excluding boulder substrate') + xlab('Year') +
+  scale_y_continuous(breaks = seq(0,70, by=10))
 
-ggsave('../figs/aspera-occurrence.jpg', asplot)
+ggsave('../figs/aspera-occurrence.jpg', asplot, height = 5, width=7)
 
 ggplot(asp[which(asp$fullname=='Chara aspera'),], aes(x=long,y=lat)) +
   papertheme +

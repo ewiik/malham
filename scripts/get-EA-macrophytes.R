@@ -5,6 +5,8 @@ library(rgdal)
 library(sp)
 library(sf)
 
+library(RODBC)
+
 library(Hmisc)
 library(reshape2)
 library(ggplot2)
@@ -19,6 +21,8 @@ papertheme <- theme_bw(base_size=12, base_family = 'ArialMT') +
 db <- odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};
                         DBQ=../dat-orig/EA/sca_database_v2.2_2007_2019_Malham_data.mdb")
 data <- as_tibble(sqlFetch (db , "LHS_Survey", rownames=TRUE))
+
+marg <- as_tibble(sqlFetch (db , "LHS_ShoreSubmerged", rownames=TRUE))
 
 fv <- read.csv("../dat-orig/EA/2004-2004surveys-longformat.csv")
 fvcoords <- read.csv("../dat-orig/EA/2004-2005-coordinates.csv")
@@ -359,6 +363,20 @@ ggplot(sumdat, aes(x=long,y=lat, colour=factor(biomass))) +
   facet_wrap(~factor(date) ) +
   scale_colour_manual(values=c('#a6611a','#dfc27d','#80cdc1','#018571')) +
   geom_line(inherit.aes=F, data=allcoords, aes(x=Long, y=Lat,group=interaction(date, transect, location))) 
+
+## ==============================================================================
+## perimeter strandline finds
+## ===============================================================================
+sects <- as.data.frame(as_tibble(sqlFetch (db , "LHS_Section", rownames=TRUE)))
+
+## link with marg
+extras <- as.data.frame(unique(marg[,c('SectionID','PlantSpecies')]))
+
+extras <- merge(extras, sects, all.y = F, by.y = "ID", by.x = "SectionID")
+extras <- subset(extras, select = c("SurveyID","PlantSpecies"))
+
+extras <- merge(extras, data[,c("ID","SurveyDate")], by.x = 'SurveyID', by.y = 'ID', all.y = F)
+
 
 ## ==============================================================================================
 ## save data
