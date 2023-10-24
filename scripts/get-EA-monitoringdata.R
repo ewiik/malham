@@ -2,7 +2,7 @@
 ## ================================================================================
 ## data availability starts at 2000, this is the generic access url;
 ##    download only those that don't already exist in files
-years <- 2000:2019
+years <- 2000:2022
 namelist <- list(paste0("http://environment.data.gov.uk/water-quality/batch/measurement?area=3-34&isComplianceSample=false&year=", 
                         years))
 namelist <- paste0("http://environment.data.gov.uk/water-quality/batch/measurement?area=3-34&isComplianceSample=false&year=", 
