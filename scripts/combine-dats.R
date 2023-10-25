@@ -14,7 +14,6 @@ levels(ongrab$Site) <- c("Goredale Beck", "Malham Beck BH", "Malham Beck MC", "M
 ongrab <- subset(ongrab, Site %in% c("Malham Tarn FSC","Tarn Beck","Malham Tarn","River Aire") &
                    var %in% c("N Oxidised","Nitrate-N","Orthophospht",
                               'P Digested'  ,'Phosphorus-P' , 'OrthophsFilt'))
-# why not P Digested  ,Phosphorus-P OrthophsFilt
 
 alldat <- subset(ongrab, select=c("Site","DateTime","var","value"))
 alldat$Measure <- "Nitrate-N"
@@ -117,13 +116,16 @@ mylabel_parsed <- function (labels, multi_line = FALSE)
 
 Ndat <- alldat[grep("N", alldat$Measure),]
 Ndat$Site <- relevel(Ndat$Site, ref = 4)
-Nplot <- ggplot(Ndat[Ndat$Site!="Malham Tarn",], aes(x=DateTime, y=value)) +
+
+Nplot <- 
+  ggplot(Ndat[Ndat$Site!="Malham Tarn",], aes(x=DateTime, y=value)) +
   papertheme +
   facet_wrap(Site~Measure, ncol=1, labeller = mylabel_parsed) +
   geom_point(aes(colour=lessthan), alpha=0.6) +
-  geom_hline(yintercept = 0.5) + ylab("N (mg/L)") +
+  geom_hline(yintercept = 0.5, linetype='dotted') + ylab("N (mg/L)") +
+  geom_hline(yintercept = 1.5, linetype='solid') +
   scale_color_manual(name="Below detection limit", values=c("#4575b4","#d73027")) +
-  scale_x_datetime(date_breaks = '1 year', date_labels = "%y")
+  scale_x_datetime("Year", date_breaks = '1 year', date_labels = "%y")
 
 Pdat <- alldat[grep("P", alldat$Measure),]
 Pdat$Site <- relevel(Pdat$Site, ref = 4)
@@ -138,16 +140,25 @@ Pdat$value[Pdat$Measure=='TP-PhosphorusP'] <- Pdat$value[Pdat$Measure=='TP-Phosp
   #ylim(c(0,100)) +
   scale_color_manual(name="Below detection limit", values=c("#4575b4","#d73027")) +
   scale_x_datetime(date_breaks = '1 year', date_labels = "%y")
- 
-oneplot <-   ggplot(Pdat[Pdat$Site=='Malham Tarn' & Pdat$Measure!='Phosphate-P',], 
-          aes(x=DateTime, y=value, group=Site, col=Measure)) +
+
+  Pdat$Month <- as.numeric(format(Pdat$DateTime,'%m') )
+  
+  ## from https://en.climate-data.org/europe/united-kingdom/england/malham-60662/#climate-graph
+  meantemps <- data.frame(Month = 1:12, temp=c(2.5, 2.7,4.6,7.1,10.4,13.6,14.9,14.6,12.4,	9.3,5.4,3.2) )
+  Pdat <- merge(Pdat, meantemps)
+
+oneplot <- 
+  ggplot(Pdat[Pdat$Site=='Malham Tarn' & Pdat$Measure!='Phosphate-P',], 
+          aes(x=DateTime, y=value, group=Site, fill=temp)) + #, col=Measure
     papertheme +
     #facet_wrap(~Measure, ncol=1,  scales='free_y',labeller = mylabel_parsed) +
-    geom_point(alpha=0.6) +
+    geom_point(alpha=0.6, col='black', shape=21, size=2) +
     geom_hline(yintercept = 12) + ylab("P (ug/L)") + xlab('Year') +
     #ylim(c(0,100)) +
-    #scale_color_manual(name="Below detection limit", values=c("#4575b4","#d73027")) +
-    scale_x_datetime(date_breaks = '1 year', date_labels = "%y")
+    scale_fill_gradient2(name="Monthly mean temperature (degC)", midpoint=6, high = muted('red'),low=muted('blue')) +
+    scale_x_datetime(date_breaks = '1 year', date_labels = "%Y") +
+  theme(legend.key.width = unit(2, "cm")) +
+  guides(fill=guide_colorbar(title.position = "left", title.vjust = 0.9, title.hjust = 1))
 
 TPsum <- Pdat[Pdat$Site=='Malham Tarn' & Pdat$Measure!='Phosphate-P',]   
 TPsum$Year <- format(TPsum$DateTime,'%Y')
@@ -155,15 +166,19 @@ TPsum <- ddply(TPsum, .(Year), summarise, meanTP = mean(value, na.rm = T),
                medTP=median(value, na.rm = T))
 TPsum <- melt(TPsum, measure.vars = c('meanTP','medTP'))
 
-twoplot <- ggplot(TPsum, aes(x=Year, y=value, col=variable)) +
+twoplot <- 
+ggplot(TPsum, aes(x=Year, y=value, shape=variable)) +
   papertheme +
-  geom_point(alpha=0.6) +
-  geom_hline(yintercept = 12) + ylab("Annually aggregated \n P (ug/L)") #+
-  #scale_color_manual(name="Below detection limit", values=c("#4575b4","#d73027")) +
+  geom_point(alpha=0.6, color='black', size=2, fill='grey70') +
+  geom_hline(yintercept = 12) + ylab("Annually aggregated \n P (ug/L)") +
+  scale_shape_manual(name="Measure",labels=c('Mean','Median'), values=c(21,22))
+  #scale_fill_manual(name="Measure",labels=c('Mean','Median'), values=c("#4575b4","#d73027")) 
   #scale_x_datetime(date_breaks = '1 year', date_labels = "%y")
 
-ggsave(filename = "../figs/summaryN.png",plot = Nplot)
+ggsave(filename = "../figs/summaryN.jpg", plot = Nplot, width = 18, units='cm')
+ggsave(filename = "../figs/summaryN.pdf", plot = Nplot, width = 18, units='cm')
+
 ggsave(filename = "../figs/summaryP.png", plot=Pplot)
 
 quickplot <- grid.arrange(oneplot, twoplot, ncol=1)
-ggsave(filename = "../figs/TP-time-Malham.png", plot=quickplot, width=12, height=8)
+ggsave(filename = "../figs/TP-time-Malham.jpg", plot=quickplot)

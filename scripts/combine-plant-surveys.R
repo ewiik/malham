@@ -1,6 +1,13 @@
 ## script that combines all plant data
 library(reshape2)
 library(plyr)
+library(scales)
+library(ggplot2)
+library(Hmisc)
+
+## create a theme to save linespace in plots
+papertheme <- theme_bw(base_size=10, base_family = 'ArialMT') +
+  theme(legend.position='top')
 
 ## read in data
 peri <- readRDS("../dat-mod/mal-plantsurvey-2019-perimeter.rds")
@@ -28,6 +35,13 @@ alltrans<- subset(alltrans, select = c('date', 'location','end','transect','lat'
 alltrans <- rbind.fill(alltrans,eatrans)
 alltrans$year <- format(alltrans$date, '%Y')
 
+## create data frame with surveyors
+surs <- data.frame(date=c("28.07.2004","29.06.2005","01.09.2005","15.06.2009","11.08.2009","16.06.2010","12.08.2010",
+                          "20.07.2019","08.02.2011",'19.08.2014','21.08.2018'), 
+                   surveyors = c('ES,HC','AB,BG','AB,BG','EW,GC,TD','CS,EW,HB','CH,EW,JS','CS,EW,HB',
+                                 'CS,EW,IP',NA,NA, 'BG,NS'), stringsAsFactors = F)
+surs$date <- as.POSIXct(surs$date, format = '%d.%m.%Y', tz='Europe/London')
+
 ### rename '' as no plants and separate extra points from rest - for now
 ## FIXME 0 still a few replaced by new point places
 extras <- plants[which(plants$point>201),]
@@ -37,6 +51,12 @@ plants$species[plants$species=='' & plants$plantcover==0 ] <- 'No plants'
 plants$species[plants$species=='' & plants$plantcover==39 ] <- 'pluc' # one missing entry
 ## FIXME: correct missing entry in raw data
 plants <- droplevels(plants)
+
+## FIXME: sort these IDs out:
+# chara1 <- "ccon"
+# chara2 <- "cvir"
+# chara3 <- "cvul"
+# chara4 <- "cglob"
 
 ## sort out extra space in oplants and make substrate cases comparable
 unique(oplants$substrate)
@@ -143,10 +163,31 @@ allplants$datefac <- as.factor(allplants$date)
 allplants$poor <- 'no'
 allplants$poor[allplants$year %in% c('2011','2014')] <- 'yes'
 
-ggplot(alltrans, aes(x=long, y=lat, colour=missing)) +
-  geom_line(aes(group=interaction(factor(transect), location,factor(date)))) +
+tn <- trans_new("logpeps",
+                function(x) x-min(x),
+                function(y) y-min(y))
+
+allsurvs <- data.frame(datefac=unique(alltrans$datefac))
+allsurvs$datefac <- allsurvs$datefac[order(allsurvs$datefac)]
+allsurvs$surveyors <- c("ES,HC",'AB,BG','AB,BG','TD,GC,EW','CS,EW,HB','CH,EW,JS','CS,EW,HB','AD,LD','SD,HG','BG,NFS')
+
+alltrans$missing <- capitalize(alltrans$missing)
+
+tplot <- 
+  ggplot(alltrans, aes(x=long - min(peri$long), y=lat - min(peri$lat), colour=missing)) +
+  papertheme +
+  geom_line(aes(group=interaction(factor(transect), location,factor(date))), size=1.5) +
   geom_path(data=peri, aes(group=group),color="black", linetype='dotted') +
-  facet_wrap(~datefac) # 2011, 2014 unfortunately
+  facet_wrap(~datefac, ncol=5) +
+    scale_colour_manual("Transect missing (e.g. weather)", values=c('#1b9e77','#d95f02')) +
+  geom_text(inherit.aes = F, data=allsurvs, aes(x=10,y=10,label=surveyors, group=datefac), size=3,
+            vjust='inward', hjust='inward')  +
+  coord_equal() +
+    ylab('Distance (m from base coordinates)') + 
+    xlab('Distance (m from base coordinates)')# 2011, 2014 unfortunately
+
+ggsave('../figs/csm-transects.jpg', tplot, width=18,units='cm')
+ggsave('../figs/csm-transects.pdf', tplot, width=18,units='cm')
 
 speciesdf <- unique(allplants[,c('speciestype','date')])
 
@@ -222,3 +263,5 @@ subplants <- rbind.fill(subplants, sumplants)
 saveRDS(alltrans, '../dat-mod/all-plant-transects.rds')
 saveRDS(allplants, '../dat-mod/all-plant-surveys.rds')
 saveRDS(subplants,'../dat-mod/all-plant-surveys-nospecies.rds')
+
+saveRDS(surs, "../dat-mod/all-plant-surveyors.rds")

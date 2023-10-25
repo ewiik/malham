@@ -12,7 +12,7 @@ destlist <- list(paste0("../dat-orig/EA-online/yorkmon",years,".csv"))
 destlist <- paste0("../dat-orig/EA-online/yorkmon",years,".csv")
 
 reps <-file.exists(destlist)
-want <- c(which(reps==F)[1]-1, which(reps==F)) # to protect incomplete years
+want <- c(which(reps==F)[1]-1, which(reps==F)) # to protect incomplete years grab also penultimate
 
 Map(download.file, namelist[want], destlist[want])
 
