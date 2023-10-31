@@ -3,12 +3,12 @@
 ## data availability starts at 2000, this is the generic access url;
 ##    download only those that don't already exist in files
 years <- 2000:2022
-namelist <- list(paste0("http://environment.data.gov.uk/water-quality/batch/measurement?area=3-34&isComplianceSample=false&year=", 
-                        years))
+#namelist <- list(paste0("http://environment.data.gov.uk/water-quality/batch/measurement?area=3-34&isComplianceSample=false&year=", 
+ #                       years))
 namelist <- paste0("http://environment.data.gov.uk/water-quality/batch/measurement?area=3-34&isComplianceSample=false&year=", 
                         years)
 
-destlist <- list(paste0("../dat-orig/EA-online/yorkmon",years,".csv"))
+#destlist <- list(paste0("../dat-orig/EA-online/yorkmon",years,".csv"))
 destlist <- paste0("../dat-orig/EA-online/yorkmon",years,".csv")
 
 reps <-file.exists(destlist)
